@@ -4,7 +4,7 @@
 module Geodesics where
 
 import Numeric.AD.Mode.Reverse
-import Data.Array.Repa hiding (map, toList, zipWith)
+import qualified Data.Vector.Unboxed as V
 
 -- A custom datatype for a 4-vector. This is required for AD to work
 -- (need to have the Traversable instance).
@@ -18,6 +18,9 @@ type Metric a = (Int, Int) -> FourVector a -> a
 toList :: FourVector a -> [a]
 {-# INLINE toList #-}
 toList (FV !a !b !c !d) = [a, b, c, d]
+
+toVector :: V.Unbox a => FourVector a -> V.Vector a
+toVector = V.fromList . toList
 
 -- Indexing into a 4-vector
 idx :: Floating a => FourVector a -> Int -> a
@@ -42,42 +45,43 @@ convIndex (!i, !j) = if i > j then ix (j, i)
 
 -- Given the components of the inverse metric and the metric derivatives,
 -- compute a single Christoffel symbol
-christoffel :: Array U DIM2 Double -> Metric Double -> FourVector Double
+christoffel :: V.Vector Double -> Metric Double -> FourVector Double
                -> (Int, Int, Int) -> Double
 {-# INLINE christoffel #-}
 christoffel !dmetric !imetric !crd (!l, !j, !k) = sum (map term [0..3]) / 2
     where term !r = imetric (l, r) crd * (
-                        (dmetric ! (Z :. convIndex (r, j) :. k))
-                      + (dmetric ! (Z :. convIndex (r, k) :. j))
-                      - (dmetric ! (Z :. convIndex (j, k) :. r))
+                        (dmetric `V.unsafeIndex` (4 * convIndex (r, j) + k))
+                      + (dmetric `V.unsafeIndex` (4 * convIndex (r, k) + j))
+                      - (dmetric `V.unsafeIndex` (4 * convIndex (j, k) + r))
                       )
+
+-- The set of indices of unique elements of a symmetric 4x4 matrix
+symIndices :: [(Int, Int)]
+symIndices = [ (0, 0), (0, 1), (0, 2), (0, 3),
+                       (1, 1), (1, 2), (1, 3),
+                               (2, 2), (2, 3),
+                                       (3, 3) ]
 
 -- Compute the right hand side of the geodesic equation
 fgeodesic :: (forall a. Floating a => Metric a) -> Metric Double
              -> FourVector Double -> FourVector Double
              -> FourVector Double
 {-# INLINE fgeodesic #-}
-fgeodesic !metric !imetric !vel !crd = fmap fcomponent (FV 0 1 2 3)
+fgeodesic !metric !imetric !vel !crd = fmap fcomponent (FV (0 :: Int) 1 2 3)
     where fcomponent !l = -sum (zipWith (term l) symIndices coeffs)
           term !l (!j, !k) !c = c * (vel `idx` j) * (vel `idx` k)
               * christoffel dmetric imetric crd (l, j, k)
-          -- Because of the symmetry of the Levi-Civita connection, the
-          -- off-diagonal components are duplicated
+            -- Because of the symmetry of the Levi-Civita connection, the
+            -- off-diagonal components are duplicated
           coeffs :: [Double]
           coeffs = [ 1, 2, 2, 2,
                         1, 2, 2,
                            1, 2,
                               1 ]
-          -- The set of indices of unique elements of a symmetric 4x4 matrix
-          symIndices :: [(Int, Int)]
-          symIndices = [ (0, 0), (0, 1), (0, 2), (0, 3),
-                                 (1, 1), (1, 2), (1, 3),
-                                         (2, 2), (2, 3),
-                                                 (3, 3) ]
           -- Precompute the metric derivatives at crd
           -- TODO: experiment with having an unboxed vector here instead
-          dmetric = fromListUnboxed (Z :. (10 :: Int) :. (4 :: Int))
-              $ concat [ toList (grad (metric i) crd) | i <- symIndices ]
+          dmetric = V.fromList $ concatMap (\i -> toList (grad (metric i) crd))
+              symIndices
 
 -- The Schwarzschild metric with a Schwarzschild radius of 1
 schwarz :: Floating a => Metric a

@@ -18,7 +18,7 @@ library
   exposed-modules:     Geodesics
   build-depends:       base >= 4.7 && < 5
                      , ad
-                     , repa
+                     , vector
   default-language:    Haskell2010
 
 executable blackstar
@@ -28,7 +28,6 @@ executable blackstar
   build-depends:       base
                      , blackstar
                      , criterion
-                     , repa
                      , random
   default-language:    Haskell2010
 

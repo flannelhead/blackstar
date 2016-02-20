@@ -17,5 +17,5 @@ benchmarkGeodesics = defaultMain [ bench "geodesic equations" $ whnf
 profileGeodesics :: IO ()
 profileGeodesics = replicateM_ 100000 $ do
     r <- getStdRandom (randomR (2 :: Double, 3))
-    let x = fgeodesic schwarz ischwarz (FV 1 1 1 1) (FV 0 r (pi/2) 0)
+    let x = fgeodesic schwarz ischwarz (FV 1 1 r 1) (FV 0 r (pi/2) 0)
     return $! x
