@@ -19,9 +19,6 @@ toList :: FourVector a -> [a]
 {-# INLINE toList #-}
 toList (FV !a !b !c !d) = [a, b, c, d]
 
-toVector :: V.Unbox a => FourVector a -> V.Vector a
-toVector = V.fromList . toList
-
 -- Indexing into a 4-vector
 idx :: Floating a => FourVector a -> Int -> a
 {-# INLINE idx #-}
