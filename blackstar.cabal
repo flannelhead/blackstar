@@ -1,7 +1,7 @@
 name:                blackstar
 version:             0.1.0.0
-synopsis:            A black hole raytracer
-description:         A black hole raytracer written in Haskell
+synopsis:            A black hole ray tracer
+description:         A black hole ray tracer written in Haskell
 homepage:            http://github.com/flannelhead/blackstar#readme
 license:             BSD3
 license-file:        LICENSE
