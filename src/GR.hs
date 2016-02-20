@@ -3,7 +3,7 @@
 
 module GR where
 
-import Numeric.AD
+import Numeric.AD.Mode.Reverse
 import Data.Array.Repa hiding (map, toList)
 
 data FourVector a = FVect !a !a !a !a
