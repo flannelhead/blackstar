@@ -28,13 +28,6 @@ idx (FV  _  _ !a  _) 2 = a
 idx (FV  _  _  _ !a) 3 = a
 idx _ _ = 0
 
--- The set of indices of unique elements of a symmetric 4x4 matrix
-symIndices :: [(Int, Int)]
-symIndices = [ (0, 0), (0, 1), (0, 2), (0, 3),
-                       (1, 1), (1, 2), (1, 3),
-                               (2, 2), (2, 3),
-                                       (3, 3) ]
-
 -- The metric and connection components are internally stored as 1D vectors of
 -- 10 elements. This is an index conversion function for that purpose
 convIndex :: (Int, Int) -> Int
@@ -70,10 +63,17 @@ fgeodesic !metric !imetric !vel !crd = fmap fcomponent (FV 0 1 2 3)
               * christoffel dmetric imetric crd (l, j, k)
           -- Because of the symmetry of the Levi-Civita connection, the
           -- off-diagonal components are duplicated
+          coeffs :: [Double]
           coeffs = [ 1, 2, 2, 2,
                         1, 2, 2,
                            1, 2,
                               1 ]
+          -- The set of indices of unique elements of a symmetric 4x4 matrix
+          symIndices :: [(Int, Int)]
+          symIndices = [ (0, 0), (0, 1), (0, 2), (0, 3),
+                                 (1, 1), (1, 2), (1, 3),
+                                         (2, 2), (2, 3),
+                                                 (3, 3) ]
           -- Precompute the metric derivatives at crd
           -- TODO: experiment with having an unboxed vector here instead
           dmetric = fromListUnboxed (Z :. (10 :: Int) :. (4 :: Int))
