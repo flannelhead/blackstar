@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     GR
+  exposed-modules:     Geodesics
   build-depends:       base >= 4.7 && < 5
                      , ad
                      , repa

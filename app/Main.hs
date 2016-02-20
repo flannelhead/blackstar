@@ -1,6 +1,6 @@
 module Main where
 
-import GR hiding (toList)
+import Geodesics hiding (toList)
 import Criterion.Main
 import Data.Array.Repa hiding (map)
 import System.Random
