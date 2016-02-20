@@ -1,23 +1,16 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable,
-    Rank2Types #-}
+    Rank2Types, BangPatterns #-}
 
 module GR where
 
 import Numeric.AD
 import Data.Array.Repa hiding (map, toList)
-import Data.Array.Repa.Repr.Unboxed
 
-data FourVector a = FVect a a a a
+data FourVector a = FVect !a !a !a !a
                     deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 
-comp :: Floating a => Int -> FourVector a -> a
-comp 0 (FVect x _ _ _) = x
-comp 1 (FVect _ x _ _) = x
-comp 2 (FVect _ _ x _) = x
-comp 3 (FVect _ _ _ x) = x
-comp _ _ = 0
-
 toList :: FourVector a -> [a]
+{-# INLINE toList #-}
 toList (FVect a b c d) = [a, b, c, d]
 
 type Metric a = (Int, Int) -> FourVector a -> a
@@ -29,7 +22,8 @@ symIndices = [ (0, 0), (0, 1), (0, 2), (0, 3),
                                        (3, 3) ]
 
 convIndex :: (Int, Int) -> Int
-convIndex (i, j) = if i > j then idx (j, i)
+{-# INLINE convIndex #-}
+convIndex (!i, !j) = if i > j then idx (j, i)
                                else idx (i, j)
     where idx (0, k) = k
           idx (1, k) = 3 + k
@@ -37,18 +31,19 @@ convIndex (i, j) = if i > j then idx (j, i)
           idx (3, k) = 6 + k
           idx _ = -1
 
-christoffel :: (Unbox a, Floating a) => Array U DIM2 a -> Array U DIM1 a
-                                     -> (Int, Int, Int) -> a
-christoffel dmetric imetric (l, j, k) = sum (map sumTerm [0..3]) / 2
-    where sumTerm r = (imetric ! (Z :. convIndex (l, r))) *
-             (  (dmetric ! (Z :. convIndex (r, j) :. k))
-              + (dmetric ! (Z :. convIndex (r, k) :. j))
-              - (dmetric ! (Z :. convIndex (j, k) :. r)) )
+christoffel :: Array U DIM2 Double -> Array U DIM1 Double
+               -> (Int, Int, Int) -> Double
+{-# INLINE christoffel #-}
+christoffel !dmetric !imetric (!l, !j, !k) = sum (map term [0..3]) / 2
+    where term !r = (imetric ! (Z :. convIndex (l, r))) *
+                    ((dmetric ! (Z :. convIndex (r, j) :. k))
+                     + (dmetric ! (Z :. convIndex (r, k) :. j))
+                     - (dmetric ! (Z :. convIndex (j, k) :. r)))
 
-christoffels :: (Unbox a, Floating a) => (forall b. Floating b => Metric b)
-                                      -> Metric a -> FourVector a
-                                      -> Array U DIM2 a
-christoffels metric imetric crd =
+christoffels :: (forall a. Floating a => Metric a)
+                -> Metric Double -> FourVector Double
+                -> Array U DIM2 Double
+christoffels !metric !imetric !crd =
     fromListUnboxed (Z :. (4 :: Int) :. (10 :: Int))
     [ christoffel metricDerivatives inverseComponents (l, j, k)
       | l <- [0..3], (j, k) <- symIndices ]
@@ -59,13 +54,15 @@ christoffels metric imetric crd =
             $ concat [ toList (grad (metric idx) crd) | idx <- symIndices ]
 
 schwarz :: Floating a => Metric a
-schwarz (0, 0) (FVect _ r  _ _) = 1 - 1/r
-schwarz (1, 1) (FVect _ r  _ _) = -1 / (1 - 1/r)
-schwarz (2, 2) (FVect _ r  _ _) = -r**2
-schwarz (3, 3) (FVect _ r th _) = -(r * sin th)**2
+{-# INLINE schwarz #-}
+schwarz (0, 0) (FVect _ !r   _ _) = 1 - 1/r
+schwarz (1, 1) (FVect _ !r   _ _) = -1 / (1 - 1/r)
+schwarz (2, 2) (FVect _ !r   _ _) = -r**2
+schwarz (3, 3) (FVect _ !r !th _) = -(r * sin th)**2
 schwarz (_, _) _ = 0
 
 ischwarz :: Floating a => Metric a
-ischwarz (mu, nu) coords = if mu == nu
+{-# INLINE ischwarz #-}
+ischwarz (!mu, !nu) !coords = if mu == nu
                                    then 1 / schwarz (mu, nu) coords
                                    else 0
