@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable,
     Rank2Types, BangPatterns #-}
 
-module Geodesics where
+module Geometry where
 
 import Numeric.AD.Mode.Reverse
 import qualified Data.Vector.Unboxed as V

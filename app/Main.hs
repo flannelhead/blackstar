@@ -1,6 +1,6 @@
 module Main where
 
-import Geodesics hiding (toList)
+import Geometry
 import Criterion.Main
 import System.Random
 import Control.Monad
