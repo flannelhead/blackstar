@@ -3,12 +3,12 @@
 module Raytracer where
 
 import Geometry
+import qualified Data.Array.Repa as R
+import Data.Array.Repa hiding (map, zipWith)
 import Control.Monad
-import System.Random
 
 data Scene = Scene { stepSize :: Double
                    , nSteps :: Int
-                   , nRays :: Int
                    , toCartesian :: FourVector -> FourVector
                    , fromCartesian :: FourVector -> FourVector
                    , fgeodesic :: FourVector -> FourVector -> FourVector
@@ -29,7 +29,8 @@ generateRays cam = map (\v -> (fourVel v, fourPos . position $ cam)) vecs
           xres = (fromIntegral . fst . resolution $ cam) :: Double
           yres = (fromIntegral . snd . resolution $ cam) :: Double
           vecs = map (normalize . rotate)
-                   [ (fov cam * x'/xres - 0.5, fov cam * y'*yres/xres - 0.5, 1)
+                   [ (fov cam * x'/xres - 0.5,
+                     (fov cam * y'/yres - 0.5) * yres/xres, 1)
                      | x' <- [0..xres-1], y' <- [0..yres-1] ]
           rotate (u, v, w) = map (\(a, b, c) -> a*u + b*v + c*w)
               $ zip3 vleft vup vfwd
@@ -39,14 +40,13 @@ generateRays cam = map (\v -> (fourVel v, fourPos . position $ cam)) vecs
           fourPos [x, y, z] = (0, x, y, z)
           fourVel [u, v, w] = (1, u, v, w)
 
-trace :: Scene -> IO ()
-trace scn = replicateM_ (nRays scn) $ do
-    r <- getStdRandom (randomR (10 :: Double, 20))
-    let vel = (fromCartesian scn) . rayVelocity $ (1, 1, 0)
-    let pos = (fromCartesian scn) $ (0, r, 0, 0)
-    let x = last . take (nSteps scn)
-            $ iterate (rk4 (stepSize scn) schwarzGeodesic) (vel, pos)
-    return $! x
+raytrace :: Scene -> Array D DIM1 (FourVector, FourVector)
+raytrace scn = R.map trace . fromListUnboxed sh . generateRays $ cam
+    where cam = camera scn
+          (xres, yres) = resolution cam
+          sh = Z :. xres * yres
+          trace = last . take (nSteps scn)
+                  . iterate (rk4 (stepSize scn) (fgeodesic scn))
 
 rk4 :: Double
        -> (FourVector -> FourVector -> FourVector)
