@@ -2,26 +2,14 @@ module Main where
 
 import Geometry
 import Raytracer
-import System.Random
-import Control.Monad
 
-h :: Double
-h = 0.01
-
-nSteps :: Int
-nSteps = 250
-
-nRays :: Int
-nRays = 20000
-
-manyRays :: IO ()
-manyRays = replicateM_ nRays $ do
-    r <- getStdRandom (randomR (10 :: Double, 20))
-    let vel = cartesianToSchwarz . rayVelocity $ (1, 1, 0)
-    let pos = cartesianToSchwarz $ (0, r, 0, 0)
-    let x = last . take nSteps $ iterate (rk4 h schwarzGeodesic)
-              (vel, pos)
-    return $! x
+myScene :: Scene
+myScene = Scene { stepSize = 0.01
+                , nSteps = 250
+                , nRays = 20000
+                , toCartesian = schwarzToCartesian
+                , fromCartesian = cartesianToSchwarz
+                , fgeodesic = schwarzGeodesic }
 
 main :: IO ()
-main = manyRays
+main = trace myScene

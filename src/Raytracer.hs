@@ -3,11 +3,29 @@
 module Raytracer where
 
 import Geometry
+import Control.Monad
+import System.Random
+
+data Scene = Scene { stepSize :: Double
+                   , nSteps :: Int
+                   , nRays :: Int
+                   , toCartesian :: FourVector -> FourVector
+                   , fromCartesian :: FourVector -> FourVector
+                   , fgeodesic :: FourVector -> FourVector -> FourVector }
+
+trace :: Scene -> IO ()
+trace scn = replicateM_ (nRays scn) $ do
+    r <- getStdRandom (randomR (10 :: Double, 20))
+    let vel = (fromCartesian scn) . rayVelocity $ (1, 1, 0)
+    let pos = (fromCartesian scn) $ (0, r, 0, 0)
+    let x = last . take (nSteps scn)
+            $ iterate (rk4 (stepSize scn) schwarzGeodesic) (vel, pos)
+    return $! x
 
 rk4 :: Double
-       -> (FourVector Double -> FourVector Double -> FourVector Double)
-       -> (FourVector Double, FourVector Double)
-       -> (FourVector Double, FourVector Double)
+       -> (FourVector -> FourVector -> FourVector)
+       -> (FourVector, FourVector)
+       -> (FourVector, FourVector)
 {-# INLINE rk4 #-}
 rk4 !h !f !y = y `add'`
     ((k1 `add'` (k2 `mult'` 2) `add'` (k3 `mult'` 2) `add'` k4) `mult'` (h/6))

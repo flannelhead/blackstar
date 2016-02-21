@@ -2,19 +2,19 @@
 
 module Geometry where
 
-type FourVector a = (a, a, a, a)
+type FourVector = (Double, Double, Double, Double)
 
-add :: Num a => FourVector a -> FourVector a -> FourVector a
+add :: FourVector -> FourVector -> FourVector
 {-# INLINE add #-}
 add (!a, !b, !c, !d) (!x, !y, !z, !w) = (a+x, b+y, c+z, d+w)
 
-mult :: Num a => FourVector a -> a -> FourVector a
+mult :: FourVector -> Double -> FourVector
 {-# INLINE mult #-}
 mult (!a, !b, !c, !d) !k = (a*k, b*k, c*k, d*k)
 
 -- The right hand sides of the Schwarzschild geodesic equations written down
--- explicitly for comparing with the AD'd versions
-schwarzGeodesic :: FourVector Double -> FourVector Double -> FourVector Double
+-- explicitly
+schwarzGeodesic :: FourVector -> FourVector -> FourVector
 {-# INLINE schwarzGeodesic #-}
 schwarzGeodesic (!dt, !dr, !dth, !dphi) (_, !r, !th, _) = (
     -dt*dr / r',
@@ -26,15 +26,17 @@ schwarzGeodesic (!dt, !dr, !dth, !dphi) (_, !r, !th, _) = (
 
 -- Given a Cartesian 3-component direction vector, compute the corresponding
 -- "light ray velocity" 4-vector in Cartesian coordinates
-rayVelocity :: (Double, Double, Double) -> FourVector Double
+rayVelocity :: (Double, Double, Double) -> FourVector
 {-# INLINE rayVelocity #-}
 rayVelocity (!x, !y, !z) = (1, x/norm, y/norm, z/norm)
     where norm = sqrt(x*x + y*y + z*z)
 
-schwarzToCartesian :: FourVector Double -> FourVector Double
+schwarzToCartesian :: FourVector -> FourVector
+{-# INLINE schwarzToCartesian #-}
 schwarzToCartesian (!t, !r, !th, !phi) = (t, r * sin th * cos phi,
     r * sin th * sin phi, r * cos th)
 
-cartesianToSchwarz :: FourVector Double -> FourVector Double
+cartesianToSchwarz :: FourVector -> FourVector
+{-# INLINE cartesianToSchwarz #-}
 cartesianToSchwarz (!t, !x, !y, !z) = (t, r, acos (z / r), atan2 y x)
     where r = sqrt (x*x + y*y + z*z)
