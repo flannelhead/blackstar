@@ -6,7 +6,7 @@ import System.Random
 import Control.Monad
 
 h :: Double
-h = 0.1
+h = 0.01
 
 nSteps :: Int
 nSteps = 250
@@ -18,7 +18,7 @@ manyRays :: IO ()
 manyRays = replicateM_ nRays $ do
     r <- getStdRandom (randomR (10 :: Double, 20))
     let vel = cartesianToSchwarz . rayVelocity $ (1, 1, 0)
-    let pos = cartesianToSchwarz $ FV 0 r 0 0
+    let pos = cartesianToSchwarz $ (0, r, 0, 0)
     let x = last . take nSteps $ iterate (rk4 h schwarzGeodesic)
               (vel, pos)
     return $! x
