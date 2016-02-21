@@ -16,20 +16,13 @@ mult (!a, !b, !c, !d) !k = (a*k, b*k, c*k, d*k)
 -- explicitly
 schwarzGeodesic :: FourVector -> FourVector -> FourVector
 {-# INLINE schwarzGeodesic #-}
-schwarzGeodesic (!dt, !dr, !dth, !dphi) (_, !r, !th, _) = (
-    -dt*dr / r',
-    -dt*dt * (r-1)/(2*r**3) + dr*dr / (2*r') + dth*dth * (r-1)
-        + dphi*dphi * (sin th)**2 * (r-1),
-    dphi*dphi * sin th * cos th - 2*dr*dth / r,
-    -2*dphi * (dr / r + dth / tan th))
+schwarzGeodesic (!dt, !dr, !dth, !dphi) (_, !r, !th, _) =
+    ( -dt*dr / r'
+    , -dt*dt * (r-1) / (2*r**3) + dr*dr / (2*r') + dth*dth * (r-1)
+        + dphi*dphi * ((sin th)**2) * (r-1)
+    , dphi*dphi * (sin th) * (cos th) - 2*dr*dth / r
+    , -2*dphi * (dr / r + dth / tan th) )
     where r' = r * (r - 1)
-
--- Given a Cartesian 3-component direction vector, compute the corresponding
--- "light ray velocity" 4-vector in Cartesian coordinates
-rayVelocity :: (Double, Double, Double) -> FourVector
-{-# INLINE rayVelocity #-}
-rayVelocity (!x, !y, !z) = (1, x/norm, y/norm, z/norm)
-    where norm = sqrt(x*x + y*y + z*z)
 
 schwarzToCartesian :: FourVector -> FourVector
 {-# INLINE schwarzToCartesian #-}

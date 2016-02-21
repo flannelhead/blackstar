@@ -2,10 +2,11 @@ module Main where
 
 import Geometry
 import Raytracer
-import Data.Array.Repa
+import Vision.Image
+import Vision.Image.Storage.DevIL
 
 myScene :: Scene
-myScene = Scene { stepSize = 0.01
+myScene = Scene { stepSize = 0.1
                 , nSteps = 250
                 , toCartesian = schwarzToCartesian
                 , fromCartesian = cartesianToSchwarz
@@ -13,14 +14,14 @@ myScene = Scene { stepSize = 0.01
                 , camera = myCamera }
 
 myCamera :: Camera
-myCamera = Camera { position = [20, 0, 0]
+myCamera = Camera { position = [20, 0, 1]
                   , lookAt = [0, 0, 0]
-                  , upVec = [0, 0.1, 1]
+                  , upVec = [0, 0.2, 1]
                   , fov = 1.5
-                  , resolution = (1920, 1080) }
+                  , resolution = (800, 450) }
 
 main :: IO ()
 main = do
-    -- _ <- return $! computeUnboxedS $ raytrace myScene
-    _ <- computeUnboxedP $ raytrace myScene
+    img <- computeP $ raytrace myScene
+    _ <- save Autodetect "out.png" ((convert img) :: RGB)
     return ()

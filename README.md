@@ -7,6 +7,7 @@ A black hole ray tracer written in Haskell. This is a work in progress.
 * Implement the real 4D geodesic equations
 * ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
 * Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) and [Kerr](https://en.wikipedia.org/wiki/Kerr_metric) black holes
+* Gracefully deal with coordinate singularities ???
 * Render accretion disks
 * Produce wallpaper quality material by smoothing the images
 
