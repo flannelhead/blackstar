@@ -101,6 +101,13 @@ schwarzGeodesic (FV !dt !dr !dth !dphi) (FV _ !r !th _) = FV
     (-2*dphi * (dr / r + dth / tan th))
     where r' = r * (r - 1)
 
+-- Given a Cartesian 3-component direction vector, compute the corresponding
+-- "light ray velocity" 4-vector in Cartesian coordinates
+rayVelocity :: (Double, Double, Double) -> FourVector Double
+{-# INLINE rayVelocity #-}
+rayVelocity (!x, !y, !z) = FV 1 (x/norm) (y/norm) (z/norm)
+    where norm = sqrt(x*x + y*y + z*z)
+
 -- The Schwarzschild metric with a Schwarzschild radius of 1
 schwarz :: Floating a => Metric a
 {-# INLINE schwarz #-}
@@ -122,4 +129,4 @@ schwarzToCartesian (FV !t !r !th !phi) = FV t
 
 cartesianToSchwarz :: FourVector Double -> FourVector Double
 cartesianToSchwarz (FV !t !x !y !z) = FV t r (acos (z / r)) (atan2 y x)
-    where r = sqrt (x**2 + y**2 + z**2)
+    where r = sqrt (x*x + y*y + z*z)

@@ -30,7 +30,7 @@ manyGeodesics = replicateM_ 100000 $ do
 manyRays :: IO ()
 manyRays = replicateM_ 100 $ do
     r <- getStdRandom (randomR (10 :: Double, 20))
-    let vel = cartesianToSchwarz $ FV 1 (-1 / sqrt 2) (1 / sqrt 2) 0
+    let vel = cartesianToSchwarz . rayVelocity $ (1, 1, 0)
     let pos = cartesianToSchwarz $ FV 0 r 0 0
     let x = last . take steps $ iterate (rk4 h (fgeodesic schwarz ischwarz))
               (vel, pos)
