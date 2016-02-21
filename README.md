@@ -2,16 +2,16 @@
 A black hole ray tracer written in Haskell. This is a work in progress.
 
 ## Goals
-* Utilize parallel processing
+* Parallel ray tracing
 * Be fast
 * Implement the real 4D geodesic equations
-* Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric
+* ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
 * Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) and [Kerr](https://en.wikipedia.org/wiki/Kerr_metric) black holes
 * Render accretion disks
 * Produce wallpaper quality material by smoothing the images
 
 ## Implementation
-Currently the implementation leans on [ad](https://hackage.haskell.org/package/ad) for automatic differentiation and unboxed datatypes for computations in general. [Repa](https://hackage.haskell.org/package/repa) is a good candidate for the parallel processing part.
+[Repa](https://hackage.haskell.org/package/repa) is a good candidate for the parallel processing part.
 
 ## Building
 Use [stack](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar`.
