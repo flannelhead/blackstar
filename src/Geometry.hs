@@ -19,7 +19,7 @@ schwarzGeodesic :: FourVector -> FourVector -> FourVector
 schwarzGeodesic (!dt, !dr, !dth, !dphi) (_, !r, !th, _) = (
     -dt*dr / r',
     -dt*dt * (r-1)/(2*r**3) + dr*dr / (2*r') + dth*dth * (r-1)
-     + dphi*dphi * (sin th)**2 * (r-1),
+        + dphi*dphi * (sin th)**2 * (r-1),
     dphi*dphi * sin th * cos th - 2*dr*dth / r,
     -2*dphi * (dr / r + dth / tan th))
     where r' = r * (r - 1)
