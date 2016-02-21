@@ -14,7 +14,12 @@ A black hole ray tracer written in Haskell. This is a work in progress.
 [Repa](https://hackage.haskell.org/package/repa) is a good candidate for the parallel processing part.
 
 ## Building
-Use [stack](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar`.
+Use [stack](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar`. `llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build.
+
+## Things I've learnt
+* Using explicit `Double` datatypes instead of polymorphism via the `Floating` typeclass can make a huge difference in terms of speed
+* Automatic differentiation is a *really* elegant idea but comes with an overhead
+* How to spell Schwarzchild correctly
 
 ## Inspiration
 This project was heavily inspired by [this excellent article](http://rantonels.github.io/starless/) and the [Python code](http://github.com/rantonels/starless).
