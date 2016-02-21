@@ -15,7 +15,7 @@ cabal-version:       >=1.10
 
 library
   hs-source-dirs:      src
-  exposed-modules:     Geometry
+  exposed-modules:     Geometry, Raytracer
   build-depends:       base >= 4.7 && < 5
                      , ad
                      , vector

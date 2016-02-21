@@ -19,6 +19,14 @@ toList :: FourVector a -> [a]
 {-# INLINE toList #-}
 toList (FV !a !b !c !d) = [a, b, c, d]
 
+add :: Num a => FourVector a -> FourVector a -> FourVector a
+{-# INLINE add #-}
+add (FV !a !b !c !d) (FV !x !y !z !w) = FV (a+x) (b+y) (c+z) (d+w)
+
+mult :: Num a => FourVector a -> a -> FourVector a
+{-# INLINE mult #-}
+mult !v !a = fmap (* a) v
+
 -- Indexing into a 4-vector
 idx :: Floating a => FourVector a -> Int -> a
 {-# INLINE idx #-}
@@ -36,8 +44,9 @@ convIndex (!i, !j) = if i > j then ix (j, i)
                               else ix (i, j)
     where ix (0, k) = k
           ix (1, k) = 3 + k
-          ix (2, k) = 5 + k
-          ix (3, k) = 6 + k
+          ix (2, 2) = 7
+          ix (2, 3) = 8
+          ix (3, 3) = 9
           ix _ = -1
 
 -- Given the components of the inverse metric and the metric derivatives,
@@ -80,11 +89,23 @@ fgeodesic !metric !imetric !vel !crd = fmap fcomponent (FV (0 :: Int) 1 2 3)
           dmetric = V.fromList $ concatMap (\i -> toList (grad (metric i) crd))
               symIndices
 
+-- The right hand sides of the Schwarzschild geodesic equations written down
+-- explicitly for comparing with the AD'd versions
+schwarzGeodesic :: FourVector Double -> FourVector Double -> FourVector Double
+{-# INLINE schwarzGeodesic #-}
+schwarzGeodesic (FV !dt !dr !dth !dphi) (FV _ !r !th _) = FV
+    (-dt*dr / r')
+    (-dt*dt * (r-1)/(2*r**3) + dr*dr / (2*r') + dth*dth * (r-1)
+     + dphi*dphi * (sin th)**2 * (r-1))
+    (dphi*dphi * sin th * cos th - 2*dr*dth / r)
+    (-2*dphi * (dr / r + dth / tan th))
+    where r' = r * (r - 1)
+
 -- The Schwarzschild metric with a Schwarzschild radius of 1
 schwarz :: Floating a => Metric a
 {-# INLINE schwarz #-}
-schwarz (0, 0) (FV _ !r   _ _) = 1 - 1/r
-schwarz (1, 1) (FV _ !r   _ _) = -1 / (1 - 1/r)
+schwarz (0, 0) (FV _ !r   _ _) = (r - 1) / r
+schwarz (1, 1) (FV _ !r   _ _) = -r / (r - 1)
 schwarz (2, 2) (FV _ !r   _ _) = -r**2
 schwarz (3, 3) (FV _ !r !th _) = -(r * sin th)**2
 schwarz (_, _) _ = 0
@@ -94,3 +115,11 @@ ischwarz :: Floating a => Metric a
 {-# INLINE ischwarz #-}
 ischwarz (!mu, !nu) !coords = if mu == nu then 1 / schwarz (mu, nu) coords
                                           else 0
+
+schwarzToCartesian :: FourVector Double -> FourVector Double
+schwarzToCartesian (FV !t !r !th !phi) = FV t
+    (r * sin th * cos phi) (r * sin th * sin phi) (r * cos th)
+
+cartesianToSchwarz :: FourVector Double -> FourVector Double
+cartesianToSchwarz (FV !t !x !y !z) = FV t r (acos (z / r)) (atan2 y x)
+    where r = sqrt (x**2 + y**2 + z**2)
