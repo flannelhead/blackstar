@@ -7,24 +7,21 @@ import Control.Monad
 
 h :: Double
 h = 0.1
-steps :: Int
-steps = 250
+
+nSteps :: Int
+nSteps = 250
+
+nRays :: Int
+nRays = 20000
 
 main :: IO ()
--- main = manyGeodesics
 main = manyRays
 
-manyGeodesics :: IO ()
-manyGeodesics = replicateM_ 100000 $ do
-    r <- getStdRandom (randomR (2 :: Double, 3))
-    let x = fgeodesic schwarz ischwarz (FV 0 1 r 1) (FV 0 r (pi/2) 0)
-    return $! x
-
 manyRays :: IO ()
-manyRays = replicateM_ 100 $ do
+manyRays = replicateM_ nRays $ do
     r <- getStdRandom (randomR (10 :: Double, 20))
     let vel = cartesianToSchwarz . rayVelocity $ (1, 1, 0)
     let pos = cartesianToSchwarz $ FV 0 r 0 0
-    let x = last . take steps $ iterate (rk4 h (fgeodesic schwarz ischwarz))
+    let x = last . take nSteps $ iterate (rk4 h (fgeodesic schwarz ischwarz))
               (vel, pos)
     return $! x
