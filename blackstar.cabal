@@ -27,7 +27,6 @@ executable blackstar
   ghc-options:         -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields
   build-depends:       base
                      , blackstar
-                     , criterion
                      , random
   default-language:    Haskell2010
 

@@ -2,7 +2,6 @@ module Main where
 
 import Geometry
 import Raytracer
-import Criterion.Main
 import System.Random
 import Control.Monad
 
@@ -12,14 +11,8 @@ steps :: Int
 steps = 250
 
 main :: IO ()
--- main = benchmarkGeodesics
 -- main = manyGeodesics
 main = manyRays
-
-benchmarkGeodesics :: IO ()
-benchmarkGeodesics = defaultMain [ bench "ad geodesic equations" $ whnf
-                                   (fgeodesic schwarz ischwarz (FV 1 1 1 1))
-                                   (FV 0 2 (pi/2) 0) ]
 
 manyGeodesics :: IO ()
 manyGeodesics = replicateM_ 100000 $ do
