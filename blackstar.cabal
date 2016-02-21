@@ -17,14 +17,12 @@ library
   hs-source-dirs:      src
   exposed-modules:     Geometry, Raytracer
   build-depends:       base >= 4.7 && < 5
-                     , ad
-                     , vector
   default-language:    Haskell2010
 
 executable blackstar
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields
+  ghc-options:         -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields -fllvm
   build-depends:       base
                      , blackstar
                      , random
