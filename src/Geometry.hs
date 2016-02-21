@@ -1,12 +1,11 @@
-{-# LANGUAGE DeriveFunctor, DeriveFoldable, DeriveTraversable,
-    Rank2Types, BangPatterns #-}
+{-# LANGUAGE DeriveFunctor, BangPatterns #-}
 
 module Geometry where
 
 -- A custom datatype for a 4-vector. This is required for AD to work
 -- (need to have the Traversable instance).
 data FourVector a = FV !a !a !a !a
-                    deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
+                    deriving (Eq, Ord, Show, Functor)
 
 add :: Num a => FourVector a -> FourVector a -> FourVector a
 {-# INLINE add #-}
