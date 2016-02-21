@@ -11,7 +11,33 @@ data Scene = Scene { stepSize :: Double
                    , nRays :: Int
                    , toCartesian :: FourVector -> FourVector
                    , fromCartesian :: FourVector -> FourVector
-                   , fgeodesic :: FourVector -> FourVector -> FourVector }
+                   , fgeodesic :: FourVector -> FourVector -> FourVector
+                   , camera :: Camera }
+
+data Camera = Camera { position :: [Double]
+                     , lookAt :: [Double]
+                     , upVec :: [Double]
+                     , fov :: Double
+                     , resolution :: (Int, Int) }
+
+-- Generate the sight rays ie. initial conditions for the integration
+generateRays :: Camera -> [(FourVector, FourVector)]
+generateRays cam = map (\v -> (fourVel v, fourPos . position $ cam)) vecs
+    where vfwd = normalize (zipWith (-) (position cam) (lookAt cam))
+          vleft = normalize (upVec cam `cross` vfwd)
+          vup = vfwd `cross` vleft
+          xres = (fromIntegral . fst . resolution $ cam) :: Double
+          yres = (fromIntegral . snd . resolution $ cam) :: Double
+          vecs = map (normalize . rotate)
+                   [ (fov cam * x'/xres - 0.5, fov cam * y'*yres/xres - 0.5, 1)
+                     | x' <- [0..xres-1], y' <- [0..yres-1] ]
+          rotate (u, v, w) = map (\(a, b, c) -> a*u + b*v + c*w)
+              $ zip3 vleft vup vfwd
+          norm [x, y, z] = sqrt (x*x + y*y + z*z)
+          normalize v@[x, y, z] = let n = norm v in [x/n, y/n, z/n]
+          cross [x, y, z] [u, v, w] = [y*w - z*v, u*z - x*w, x*v - u*y]
+          fourPos [x, y, z] = (0, x, y, z)
+          fourVel [u, v, w] = (1, u, v, w)
 
 trace :: Scene -> IO ()
 trace scn = replicateM_ (nRays scn) $ do
