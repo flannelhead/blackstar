@@ -21,6 +21,7 @@ data Camera = Camera { position :: [Double]
 
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Scene -> Point -> (FourVector, FourVector)
+{-# INLINE generateRay #-}
 generateRay scn (Z :. y' :. x') = (posEnd `add` (pos' `mult` (-1)), posEnd)
     where cam = camera scn
           pos = position cam
