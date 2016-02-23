@@ -22,7 +22,7 @@ data Camera = Camera { position :: [Double]
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Scene -> Point -> (FourVector, FourVector)
 {-# INLINE generateRay #-}
-generateRay scn (Z :. y' :. x') = (posEnd `add` (pos' `mult` (-1)), posEnd)
+generateRay scn (Z :. y' :. x') = (schwarzInvJacobian posEnd posDiff', posEnd)
     where cam = camera scn
           pos = position cam
           pos' = fromCartesian scn $ fourPos pos
@@ -39,6 +39,7 @@ generateRay scn (Z :. y' :. x') = (posEnd `add` (pos' `mult` (-1)), posEnd)
                     $ ( fov cam * ((fromIntegral x') / xres - 0.5)
                       , fov cam * ((fromIntegral y') / yres - 0.5) * yres/xres
                       , 1 )
+          posDiff' = fourVel posDiff
           posEnd = fromCartesian scn (fourVel $ zipWith (+) pos posDiff)
           -- Basic linear algebra stuff
           norm [x, y, z] = sqrt (x*x + y*y + z*z)
@@ -47,21 +48,26 @@ generateRay scn (Z :. y' :. x') = (posEnd `add` (pos' `mult` (-1)), posEnd)
           fourPos [x, y, z] = (0, x, y, z)
           fourVel [u, v, w] = (1, u, v, w)
 
-raytrace :: Scene -> I.HSVDelayed
-raytrace scn = I.fromFunction sh (colorize . trace)
+raytrace :: Scene -> I.RGB -> I.RGBDelayed
+raytrace scn tex = I.fromFunction sh (uvLookup scn tex . traceRay)
     where cam = camera scn
           (xres, yres) = resolution cam
           sh = ix2 yres xres
-          trace = last . take (nSteps scn)
-                  . iterate (rk4 (stepSize scn) (fgeodesic scn))
-                  . generateRay scn
+          traceRay = last . take (nSteps scn)
+                     . iterate (rk4 (stepSize scn) (fgeodesic scn))
+                     . generateRay scn
 
-uvToHSV :: Double -> Double -> I.HSVPixel
-uvToHSV _ v = I.HSVPixel (round (179 * 0.5 * (1 + sin(2*pi*v)))) 255 255
+clamp :: (Ord a) => a -> a -> a -> a
+clamp mn mx = max mn . min mx
 
-colorize :: (FourVector, FourVector) -> I.HSVPixel
-colorize (v, _) = uvToHSV (0.5 + (atan2 y x) / (2*pi)) (0.5 - asin (z/r) / pi)
-    where (_, x, y, z) = schwarzToCartesian v
+uvLookup :: Scene -> I.RGB -> (FourVector, FourVector) -> I.RGBPixel
+uvLookup scn tex (vel, pos) = tex `I.index`
+                            (ix2 (clamp 0 (h-1) . floor $ v * (fromIntegral h))
+                                 (clamp 0 (w-1) . floor $ u * (fromIntegral w)))
+    where (Z :. h :. w) = I.shape tex
+          u = 0.5 + (atan2 y x) / (2*pi)
+          v = 0.5 - asin (z/r) / pi
+          (_, x, y, z) = schwarzJacobian pos vel
           r = sqrt (x*x + y*y + z*z)
 
 rk4 :: Double -> (FourVector -> FourVector -> FourVector)
