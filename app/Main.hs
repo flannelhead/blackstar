@@ -10,8 +10,8 @@ import Linear hiding (lookAt)
 import Raytracer
 
 myScene :: Scene
-myScene = Scene { stepSize = 0.16
-                , nSteps = 250
+myScene = Scene { stepSize = 0.01
+                , nSteps = 4000
                 , camera = myCamera }
 
 myCamera :: Camera
@@ -19,7 +19,7 @@ myCamera = Camera { position = V3 0 1 (-20)
                   , lookAt = V3 0 0 0
                   , upVec = V3 0.2 1 0
                   , fov = 1.5
-                  , resolution = (1024, 786) }
+                  , resolution = (400, 300) }
 
 main :: IO ()
 main = do
