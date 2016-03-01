@@ -2,13 +2,11 @@
 
 module Raytracer where
 
-import Data.Word
 import Vision.Primitive
 import qualified Vision.Image as I
 import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
 import Control.Lens
-import Data.KdMap.Static
 
 import StarMap
 
@@ -36,28 +34,30 @@ generateRay !scn !(Z :. y' :. x') = (vel, pos)
                       (fov cam * ((fromIntegral y') / yres - 0.5) * yres/xres)
                       (-1)
 
-render :: Scene -> KdMap Double (V3 Double) (Int, Word8, Word8) -> I.RGBDelayed
+render :: Scene -> StarTree -> I.RGBDelayed
 {-# INLINE render #-}
-render !scn !startree = I.fromFunction (ix2 yres xres)
-                       (colorize startree . traceray scn)
+render !scn !startree = I.fromFunction (ix2 yres xres) (traceray scn startree)
     where cam = camera scn
           (xres, yres) = resolution cam
 
-traceray :: Scene -> Point -> (V3 Double, V3 Double)
+traceray :: Scene -> StarTree -> Point -> I.RGBPixel
 {-# INLINE traceray #-}
-traceray !scn !pt = last . take (nSteps scn)
-                    . takeWhile (\(_, !p) -> sqrnorm p > 1.2 && sqrnorm p < 50**2)
-                    . iterate (rk4 (stepSize scn) (fgeodesic h2))
-                    $ ray
+traceray !scn !startree !pt =
+    colorize startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
     where ray@(vel, pos) = generateRay scn pt
           h2 = sqrnorm $ pos `cross` vel
 
-colorize :: KdMap Double (V3 Double) (Int, Word8, Word8)
+colorize :: StarTree -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
             -> (V3 Double, V3 Double) -> I.RGBPixel
 {-# INLINE colorize #-}
-colorize !starmap (!vel, !pos)
-    | sqrnorm pos < 2.25 = I.RGBPixel 0 0 0
-    | otherwise = starLookup starmap vel
+colorize !starmap !next crd@(!vel, pos@(V3 !x !y !z))
+    | r2 < 1 = I.RGBPixel 0 0 0  -- already entered the photon sphere
+    | r2 > 30**2 = starLookup starmap vel  -- sufficiently far away
+    | (signum y' /= signum y) && r2 > 6.72 && r2 < 196 = I.RGBPixel 0 0 255
+    | otherwise = colorize starmap next newCrd
+    where r2 = sqrnorm pos
+          newCrd@(_, newPos@(V3 x' y' z')) = next crd
+          r2' = sqrnorm newPos
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
