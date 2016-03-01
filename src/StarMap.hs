@@ -61,18 +61,20 @@ sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
 starLookup :: KdMap Double (V3 Double) (Int, Word8, Word8) -> V3 Double
               -> I.RGBPixel
 {-# INLINE starLookup #-}
-starLookup !starmap !vel = pxl
-    where (pos, (mag, hue, sat)) = nearest starmap $ normalize vel
-          d2 = sqrnorm $ pos ^-^ vel
-          pxl = if d2 < r2 then I.convert $ I.HSVPixel hue (sat `div` 2) val
-                           else I.RGBPixel 0 0 0
-
-          val = floor . max 0 . min 255 . (* minVal)
-                . exp $ a*(m0 - fromIntegral mag) - d2/w**2
-          minVal = 1
-          maxVal = 255
-          a = log (maxVal / minVal) / (m0 - m1)
-          m0 = 1350 :: Double
-          m1 = 950 :: Double
-          w = 0.001
-          r2 = 1
+starLookup !starmap !vel = let
+        nvel = normalize vel
+        r = 0.002
+        r2 = r*r
+        (pos, (mag, hue, sat)) = nearest starmap nvel
+        d2 = sqrnorm $ pos ^-^ nvel
+        minVal = 1
+        maxVal = 255
+        a = log (maxVal / minVal) / (m0 - m1)
+        m0 = 1350 :: Double
+        m1 = 930 :: Double
+        w = 0.0005
+        val = floor . max 0 . min 255 . (* minVal)
+              . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
+    in if d2 < r2 then I.convert $ I.HSVPixel hue
+                           (floor $ (0.75 :: Double) * fromIntegral sat) val
+                  else I.RGBPixel 0 0 0

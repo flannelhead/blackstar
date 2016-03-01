@@ -21,7 +21,7 @@ myCamera = Camera { position = V3 0 1 (-20)
                   , lookAt = V3 0 0 0
                   , upVec = V3 0.2 1 0
                   , fov = 1.5
-                  , resolution = (1920, 1080) }
+                  , resolution = (2732, 1536) }
 
 main :: IO ()
 main = doRender
