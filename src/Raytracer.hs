@@ -36,13 +36,12 @@ generateRay !scn !(Z :. y' :. x') = (vel, pos)
                       (fov cam * ((fromIntegral y') / yres - 0.5) * yres/xres)
                       (-1)
 
-render :: Scene -> [Star] -> I.RGBDelayed
+render :: Scene -> KdMap Double (V3 Double) (Int, Word8, Word8) -> I.RGBDelayed
 {-# INLINE render #-}
-render !scn !stars = I.fromFunction (ix2 yres xres)
-                       (colorize starTree . traceray scn)
+render !scn !startree = I.fromFunction (ix2 yres xres)
+                       (colorize startree . traceray scn)
     where cam = camera scn
           (xres, yres) = resolution cam
-          starTree = buildStarTree stars
 
 traceray :: Scene -> Point -> (V3 Double, V3 Double)
 {-# INLINE traceray #-}

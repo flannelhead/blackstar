@@ -28,13 +28,22 @@ main = doRender
 
 doRender :: IO ()
 doRender = do
+    putStrLn "Reading the starmap..."
     starmap <- readMapFromFile "PPM"
+    putStrLn "Starmap read."
     case starmap of
         Right stars -> do
             -- print $ sum (map snd stars) `div` length stars
             -- print $ minimum (map snd stars)
-            img <- computeP $ render myScene stars
+            putStrLn "Building the star k-d tree..."
+            startree <- return $! buildStarTree stars
+            putStrLn "Startree built."
+            putStrLn "Rendering..."
+            img <- computeP $ render myScene startree
+            putStrLn "Rendering completed."
+            putStrLn "Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
             _ <- save PNG "out.png" ((convert img) :: RGB)
+            putStrLn "Everything done. Thank you!"
             return ()
         _ -> putStrLn "Couldn't load the texture"
