@@ -3,15 +3,17 @@
 module Main where
 
 import System.Directory
-import Vision.Image
+import Control.Monad
+import Vision.Image hiding (map)
 import Vision.Image.Storage.DevIL
 import Linear hiding (lookAt)
 
 import Raytracer
+import StarMap
 
 myScene :: Scene
-myScene = Scene { stepSize = 0.01
-                , nSteps = 4000
+myScene = Scene { stepSize = 0.15
+                , nSteps = 250
                 , camera = myCamera }
 
 myCamera :: Camera
@@ -19,15 +21,20 @@ myCamera = Camera { position = V3 0 1 (-20)
                   , lookAt = V3 0 0 0
                   , upVec = V3 0.2 1 0
                   , fov = 1.5
-                  , resolution = (400, 300) }
+                  , resolution = (1920, 1080) }
 
 main :: IO ()
-main = do
-    etex <- load Autodetect "texture.jpg"
-    case etex of
-        Right (tex :: RGB) -> do
-            img <- computeP $ render myScene tex
-            removeFile "out.png"
+main = doRender
+
+doRender :: IO ()
+doRender = do
+    starmap <- readMapFromFile "PPM"
+    case starmap of
+        Right stars -> do
+            -- print $ sum (map snd stars) `div` length stars
+            -- print $ minimum (map snd stars)
+            img <- computeP $ render myScene stars
+            doesFileExist "out.png" >>= (`when` removeFile "out.png")
             _ <- save PNG "out.png" ((convert img) :: RGB)
             return ()
-        _ -> return ()
+        _ -> putStrLn "Couldn't load the texture"
