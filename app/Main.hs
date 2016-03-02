@@ -4,7 +4,6 @@ module Main where
 
 import System.Directory
 import Control.Monad
-import Control.DeepSeq
 import Vision.Image hiding (map)
 import Vision.Image.Storage.DevIL
 import Linear hiding (lookAt)
@@ -33,13 +32,11 @@ doRender = do
     starmap <- readMapFromFile "PPM"
     case starmap of
         Right stars -> do
-            stars `deepseq` putStrLn "Starmap read."
-            putStrLn "Building the k-d star tree..."
+            putStrLn "Starmap read."
             let startree = buildStarTree stars
-            startree `deepseq` putStrLn "Star tree built."
             putStrLn "Rendering..."
             img <- computeP $ render myScene startree
-            img `deepseq` putStrLn "Rendering completed."
+            putStrLn "Rendering completed."
             putStrLn "Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
             _ <- save PNG "out.png" ((convert img) :: RGB)
