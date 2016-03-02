@@ -4,12 +4,13 @@ module Main where
 
 import System.Directory
 import Control.Monad
-import Vision.Image hiding (map)
+import Vision.Image hiding (map, gaussianBlur)
 import Vision.Image.Storage.DevIL
 import Linear hiding (lookAt)
 
 import Raytracer
 import StarMap
+import Color
 
 myScene :: Scene
 myScene = Scene { stepSize = 0.15
@@ -40,9 +41,12 @@ main = do
             putStrLn "Starmap read. Rendering..."
             let startree = buildStarTree stars
             img <- computeP $ render myScene startree
+            let (w, _) = resolution myCamera
+            putStrLn "Applying Gaussian blur..."
+            final <- computeP $ gaussianBlur (w `div` 20) img
             putStrLn "Rendering completed. Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
-            _ <- save PNG "out.png" ((convert img) :: RGB)
+            _ <- save PNG "out.png" final
             putStrLn "Everything done. Thank you!"
             return ()
         _ -> putStrLn "Couldn't load the starmap."
