@@ -14,7 +14,15 @@ import StarMap
 myScene :: Scene
 myScene = Scene { stepSize = 0.15
                 , nSteps = 250
-                , camera = myCamera }
+                , camera = myCamera
+                , starIntensity = 0.9
+                , starSaturation = 0.8
+                , renderDisk = True
+                , diskOpacity = 0.8
+                , diskIntensity = 1
+                , diskSaturation = 1
+                , diskInner = 3
+                , diskOuter = 10 }
 
 myCamera :: Camera
 myCamera = Camera { position = V3 0 1 (-20)

@@ -2,7 +2,9 @@
 
 module Raytracer (
     render,
-    Scene(Scene, stepSize, nSteps, camera),
+    Scene(Scene, stepSize, nSteps, camera, starIntensity, starSaturation,
+          renderDisk, diskIntensity, diskSaturation, diskOpacity, 
+          diskInner, diskOuter),
     Camera(Camera, position, lookAt, upVec, fov, resolution)
     ) where
 
@@ -17,7 +19,15 @@ import Color
 
 data Scene = Scene { stepSize :: Double
                    , nSteps :: Int
-                   , camera :: Camera }
+                   , camera :: Camera
+                   , starIntensity :: Double
+                   , starSaturation :: Double
+                   , renderDisk :: Bool
+                   , diskIntensity :: Double
+                   , diskSaturation :: Double
+                   , diskOpacity :: Double
+                   , diskInner :: Double
+                   , diskOuter :: Double }
 
 data Camera = Camera { position :: V3 Double
                      , lookAt :: V3 Double
