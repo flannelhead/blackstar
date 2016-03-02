@@ -47,7 +47,7 @@ generateRay !scn !(Z :. y' :. x') = (vel, pos)
           matr = L.lookAt pos (lookAt cam) (upVec cam) ^. _m33
           vel  = normalize . (transpose matr !*)
                  $ V3 (fov cam * ((fromIntegral x') / xres - 0.5))
-                      (fov cam * ((fromIntegral y') / yres - 0.5) * yres/xres)
+                      (fov cam * (0.5 - (fromIntegral y') / yres) * yres/xres)
                       (-1)
 
 render :: Scene -> StarTree -> I.RGBDelayed
