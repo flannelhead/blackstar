@@ -1,6 +1,10 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Raytracer where
+module Raytracer (
+    render,
+    Scene(Scene, stepSize, nSteps, camera),
+    Camera(Camera, position, lookAt, upVec, fov, resolution)
+    ) where
 
 import Vision.Primitive
 import qualified Vision.Image as I
@@ -21,11 +25,10 @@ data Camera = Camera { position :: V3 Double
                      , fov :: Double
                      , resolution :: (Int, Int) }
 
-data Layer = Layer Rgba | Bottom Rgba | None
+data Layer = Layer !Rgba | Bottom !Rgba | None
 
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Scene -> Point -> (V3 Double, V3 Double)
-{-# INLINE generateRay #-}
 generateRay !scn !(Z :. y' :. x') = (vel, pos)
     where cam = camera scn
           pos = position cam
@@ -38,13 +41,11 @@ generateRay !scn !(Z :. y' :. x') = (vel, pos)
                       (-1)
 
 render :: Scene -> StarTree -> I.RGBDelayed
-{-# INLINE render #-}
 render !scn !startree = I.fromFunction (ix2 yres xres) (traceray scn startree)
     where cam = camera scn
           (xres, yres) = resolution cam
 
 traceray :: Scene -> StarTree -> Point -> I.RGBPixel
-{-# INLINE traceray #-}
 traceray !scn !startree !pt = toRGBPixel
     . colorize startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
     where ray@(vel, pos) = generateRay scn pt
@@ -52,7 +53,6 @@ traceray !scn !startree !pt = toRGBPixel
 
 colorize :: StarTree -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
             -> (V3 Double, V3 Double) -> Rgba
-{-# INLINE colorize #-}
 colorize !startree !next !crd = let newCrd = next crd in
     case findColor startree crd newCrd of
         Layer rgba -> blend rgba $ colorize startree next newCrd
@@ -61,7 +61,6 @@ colorize !startree !next !crd = let newCrd = next crd in
 
 findColor :: StarTree -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
              -> Layer
-{-# INLINE findColor #-}
 findColor !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
     | r2 < 1 = Bottom $ Rgba 0 0 0 1  -- already entered the photon sphere
     | r2 > 30**2 = Bottom $ starLookup startree vel  -- sufficiently far away
@@ -74,7 +73,6 @@ findColor !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-{-# INLINE rk4 #-}
 rk4 !h !f !y = y `add`
     ((k1 `add` (k2 `mul` 2) `add` (k3 `mul` 2) `add` k4) `mul` (h/6))
     where k1 = f y
@@ -86,5 +84,4 @@ rk4 !h !f !y = y `add`
           add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
 
 fgeodesic :: Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-{-# INLINE fgeodesic #-}
 fgeodesic h2 (!vel, !pos) = (-1.5*h2 / ((sqrnorm pos)**2.5) *^ pos, vel)

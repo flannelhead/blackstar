@@ -1,6 +1,8 @@
 {-# LANGUAGE BangPatterns #-}
 
-module StarMap where
+module StarMap (
+    Star, StarTree, readMapFromFile, buildStarTree, sqrnorm, starLookup
+    ) where
 
 import Control.Monad
 import Data.Word
@@ -32,11 +34,9 @@ readMap = do
                      . chr $ fromIntegral spectral)
 
 starColor' :: Int -> Char -> (Int, Word8, Word8)
-{-# INLINE starColor' #-}
 starColor' !mag !ch = let (!h, !s) = starColor ch in (mag, h, s)
 
 starColor :: Char -> (Word8, Word8)
-{-# INLINE starColor #-}
 starColor 'O' = (114, 99)
 starColor 'B' = (113, 84)
 starColor 'A' = (112, 54)
@@ -58,11 +58,9 @@ buildStarTree :: [Star] -> StarTree
 buildStarTree stars = build (\(V3 !x !y !z) -> [x, y, z]) stars
 
 sqrnorm :: V3 Double -> Double
-{-# INLINE sqrnorm #-}
 sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
 
 starLookup :: StarTree -> V3 Double -> Rgba
-{-# INLINE starLookup #-}
 starLookup !starmap !vel = let
         r = 0.002  -- star sampling radius
         m0 = 1350 :: Double  -- the "minimum visible" magnitude
