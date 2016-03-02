@@ -51,35 +51,44 @@ generateRay !scn !(Z :. y' :. x') = (vel, pos)
                       (-1)
 
 render :: Scene -> StarTree -> I.RGBDelayed
-render !scn !startree = I.fromFunction (ix2 yres xres) (traceray scn startree)
+render !scn !startree = I.fromFunction (ix2 yres xres) (traceRay scn' startree)
     where cam = camera scn
           (xres, yres) = resolution cam
+          scn' = scn { diskInner = (diskInner scn)**2
+                     , diskOuter = (diskOuter scn)**2 }
 
-traceray :: Scene -> StarTree -> Point -> I.RGBPixel
-traceray !scn !startree !pt = toRGBPixel
-    . colorize startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
+traceRay :: Scene -> StarTree -> Point -> I.RGBPixel
+traceRay !scn !startree !pt = toRGBPixel
+    . colorize scn startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
     where ray@(vel, pos) = generateRay scn pt
           h2 = sqrnorm $ pos `cross` vel
 
-colorize :: StarTree -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
+colorize :: Scene -> StarTree
+            -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
             -> (V3 Double, V3 Double) -> Rgba
-colorize !startree !next !crd = let newCrd = next crd in
-    case findColor startree crd newCrd of
-        Layer rgba -> blend rgba $ colorize startree next newCrd
+colorize !scn !startree !next !crd = let newCrd = next crd in
+    case findColor scn startree crd newCrd of
+        Layer rgba -> blend rgba $ colorize scn startree next newCrd
         Bottom rgba -> rgba
-        None -> colorize startree next newCrd
+        None -> colorize scn startree next newCrd
 
-findColor :: StarTree -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-             -> Layer
-findColor !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
+findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
+             -> (V3 Double, V3 Double) -> Layer
+findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
     | r2 < 1 = Bottom $ Rgba 0 0 0 1  -- already entered the photon sphere
-    | r2 > 30**2 = Bottom $ starLookup startree vel  -- sufficiently far away
-    | (signum y' /= signum y) && r2ave > 6.72 && r2ave < 196 =
-        Layer $ Rgba 0 0 255 0.5
+    | r2 > 30**2 = Bottom  -- sufficiently far away so the curvature wont affect
+        $ starLookup startree (starIntensity scn) (starSaturation scn) vel
+    | renderDisk scn && (signum y' /= signum y)
+        && r2ave > diskInner scn && r2ave < diskOuter scn
+        = Layer $ diskColor scn (sqrt r2ave) phiave
     | otherwise = None
     where r2 = sqrnorm pos
           r2' = sqrnorm newPos
           r2ave = (y'*r2 - y*r2') / (y' - y)
+          phiave = (y'*atan2 z x - y*atan2 z' x') / (y' - y)
+
+diskColor :: Scene -> Double -> Double -> Rgba
+diskColor !scn !r !phi = Rgba 0 0 255 (diskOpacity scn)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)

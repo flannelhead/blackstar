@@ -60,8 +60,8 @@ buildStarTree stars = build (\(V3 !x !y !z) -> [x, y, z]) stars
 sqrnorm :: V3 Double -> Double
 sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
 
-starLookup :: StarTree -> V3 Double -> Rgba
-starLookup !starmap !vel = let
+starLookup :: StarTree -> Double -> Double -> V3 Double -> Rgba
+starLookup !starmap !intensity !saturation !vel = let
         r = 0.002  -- star sampling radius
         m0 = 1350 :: Double  -- the "minimum visible" magnitude
         m1 = 930 :: Double -- the "saturated"
@@ -69,13 +69,13 @@ starLookup !starmap !vel = let
         nvel = normalize vel
         d2 = sqrnorm $ pos ^-^ nvel  -- the distance from the star on the
                                      -- celestial sphere surface
-        a = log 255 / (m0 - m1)
+        a = log (intensity * 255) / (m0 - m1)
         (pos, (mag, hue, sat)) = nearest starmap nvel
         -- Conversion from the log magnitude scale to linear brightness
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
-        val = floor . max 0 . min 255
+        val = floor . max 0 . min (intensity * 255)
               . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
     in if d2 < r*r then fromRGBPixel . I.convert $ I.HSVPixel hue
-                       (floor $ (0.75 :: Double) * fromIntegral sat) val
+                       (floor $ saturation * fromIntegral sat) val
                    else Rgba 0 0 0 1
