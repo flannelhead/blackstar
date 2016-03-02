@@ -73,7 +73,6 @@ findColor !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-{-# INLINE rk4 #-}
 rk4 !h !f !y = y `add`
     ((k1 `add` (k2 `mul` 2) `add` (k3 `mul` 2) `add` k4) `mul` (h/6))
     where k1 = f y
@@ -85,5 +84,4 @@ rk4 !h !f !y = y `add`
           add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
 
 fgeodesic :: Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-{-# INLINE fgeodesic #-}
 fgeodesic h2 (!vel, !pos) = (-1.5*h2 / ((sqrnorm pos)**2.5) *^ pos, vel)
