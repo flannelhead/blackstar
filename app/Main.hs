@@ -32,20 +32,15 @@ myCamera = Camera { position = V3 0 1 (-20)
                   , resolution = (1280, 720) }
 
 main :: IO ()
-main = doRender
-
-doRender :: IO ()
-doRender = do
+main = do
     putStrLn "Reading the starmap..."
     starmap <- readMapFromFile "PPM"
     case starmap of
         Right stars -> do
-            putStrLn "Starmap read."
+            putStrLn "Starmap read. Rendering..."
             let startree = buildStarTree stars
-            putStrLn "Rendering..."
             img <- computeP $ render myScene startree
-            putStrLn "Rendering completed."
-            putStrLn "Saving to out.png..."
+            putStrLn "Rendering completed. Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
             _ <- save PNG "out.png" ((convert img) :: RGB)
             putStrLn "Everything done. Thank you!"
