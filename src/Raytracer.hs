@@ -9,6 +9,7 @@ import qualified Linear as L
 import Control.Lens
 
 import StarMap
+import Color
 
 data Scene = Scene { stepSize :: Double
                    , nSteps :: Int
@@ -19,6 +20,8 @@ data Camera = Camera { position :: V3 Double
                      , upVec :: V3 Double
                      , fov :: Double
                      , resolution :: (Int, Int) }
+
+data Layer = Layer Rgba | Bottom Rgba | None
 
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Scene -> Point -> (V3 Double, V3 Double)
@@ -42,22 +45,32 @@ render !scn !startree = I.fromFunction (ix2 yres xres) (traceray scn startree)
 
 traceray :: Scene -> StarTree -> Point -> I.RGBPixel
 {-# INLINE traceray #-}
-traceray !scn !startree !pt =
-    colorize startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
+traceray !scn !startree !pt = toRGBPixel
+    . colorize startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
     where ray@(vel, pos) = generateRay scn pt
           h2 = sqrnorm $ pos `cross` vel
 
 colorize :: StarTree -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
-            -> (V3 Double, V3 Double) -> I.RGBPixel
+            -> (V3 Double, V3 Double) -> Rgba
 {-# INLINE colorize #-}
-colorize !starmap !next crd@(!vel, pos@(V3 !x !y !z))
-    | r2 < 1 = I.RGBPixel 0 0 0  -- already entered the photon sphere
-    | r2 > 30**2 = starLookup starmap vel  -- sufficiently far away
-    | (signum y' /= signum y) && r2 > 6.72 && r2 < 196 = I.RGBPixel 0 0 255
-    | otherwise = colorize starmap next newCrd
+colorize !startree !next !crd = let newCrd = next crd in
+    case findColor startree crd newCrd of
+        Layer rgba -> blend rgba $ colorize startree next newCrd
+        Bottom rgba -> rgba
+        None -> colorize startree next newCrd
+
+findColor :: StarTree -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
+             -> Layer
+{-# INLINE findColor #-}
+findColor !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
+    | r2 < 1 = Bottom $ Rgba 0 0 0 1  -- already entered the photon sphere
+    | r2 > 30**2 = Bottom $ starLookup startree vel  -- sufficiently far away
+    | (signum y' /= signum y) && r2ave > 6.72 && r2ave < 196 =
+        Layer $ Rgba 0 0 255 0.5
+    | otherwise = None
     where r2 = sqrnorm pos
-          newCrd@(_, newPos@(V3 x' y' z')) = next crd
           r2' = sqrnorm newPos
+          r2ave = (y'*r2 - y*r2') / (y' - y)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)

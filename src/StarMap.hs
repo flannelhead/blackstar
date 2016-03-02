@@ -12,6 +12,8 @@ import Data.KdMap.Static
 import Linear
 import qualified Vision.Image as I
 
+import Color
+
 type Star = (V3 Double, (Int, Word8, Word8))
 type StarTree = KdMap Double (V3 Double) (Int, Word8, Word8)
 
@@ -59,7 +61,7 @@ sqrnorm :: V3 Double -> Double
 {-# INLINE sqrnorm #-}
 sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
 
-starLookup :: StarTree -> V3 Double -> I.RGBPixel
+starLookup :: StarTree -> V3 Double -> Rgba
 {-# INLINE starLookup #-}
 starLookup !starmap !vel = let
         r = 0.002  -- star sampling radius
@@ -76,6 +78,6 @@ starLookup !starmap !vel = let
         -- and brightness of the star.
         val = floor . max 0 . min 255
               . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
-    in if d2 < r*r then I.convert $ I.HSVPixel hue
+    in if d2 < r*r then fromRGBPixel . I.convert $ I.HSVPixel hue
                        (floor $ (0.75 :: Double) * fromIntegral sat) val
-                   else I.RGBPixel 0 0 0
+                   else Rgba 0 0 0 1
