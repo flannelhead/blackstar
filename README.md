@@ -10,6 +10,9 @@ A black hole ray tracer written in Haskell. This is a work in progress.
 * Produce wallpaper quality material by smoothing the images
 * ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
 
+## What about the name?
+It is a tribute to David Bowie, referring to his last album.
+
 ## Implementation
 [`friday`](https://hackage.haskell.org/package/friday) was used for fast, parallel computation of the image.
 
@@ -34,5 +37,16 @@ The movie Interstellar did an excellent rendition of a black hole. They also pub
 
 This project was started when I was taking a general relativity course. On the course, [Sean Carroll's lecture notes](http://arxiv.org/pdf/gr-qc/9712019.pdf) were followed and proved very helpful for me.
 
-## What about the name?
-It is a tribute to David Bowie, referring to his last album.
+## TODO
+As always, there's a plenty of room for improvement. For example:
+
+* Parse the config from a YAML file (I might do this soonish)
+* Implement a "fast" preview rendering mode
+* Render more pretty pictures
+* Write a blog post about this!
+* Learn more about GHC and optimize the heck out of this
+* Store and load a precomputed k-d tree?
+* Faster Gaussian blur
+* Kerr metric (won't probably happen)
+
+Pull requests are welcome!
