@@ -58,7 +58,7 @@ gaussianBlur !rad !src = let
         [ let r' = fromIntegral r
               sigma = (fromIntegral rad / 3)
           in (exp (-(r'*r') / (2*sigma*sigma)) / (sqrt(2*pi)*sigma), r)
-        | r <- [-rad .. rad] ]
+        | r <- [ -rad .. rad ] ]
 
     norms :: U.Vector Double
     norms = U.fromList [ 1 / (U.sum . U.take len . U.map fst $ kernel)
@@ -78,8 +78,8 @@ gaussianBlur !rad !src = let
         in toRGBPixel1 . mul n $ U.foldl' (acc img) (Rgb 0 0 0) k
 
     acc :: I.RGB -> Rgb -> (Double, Int, Int) -> Rgb
-    acc !img !pxl (!weight, !x, !y) = add pxl
-        $ weight `mul` (fromRGBPixel1 $ img I.! ix2 x y)
+    acc !img !pxl (!weight, !y, !x) = add pxl
+        $ weight `mul` (fromRGBPixel1 $ img I.! ix2 y x)
     in do
         tmp <- I.computeP
             $ (I.fromFunction sh (convolve src kernH) :: I.RGBDelayed)
