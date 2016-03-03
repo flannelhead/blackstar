@@ -7,7 +7,7 @@ module StarMap
 import Control.Monad
 import Data.Word
 import Data.Char
-import Data.ByteString as B hiding (map)
+import qualified Data.ByteString as B
 import Data.Serialize.Get
 import Data.Serialize.IEEE754
 import Data.KdMap.Static

@@ -2,12 +2,14 @@ module Main where
 
 import System.Directory
 import Control.Monad
-import Vision.Image hiding (map)
+import Vision.Primitive
+import Vision.Image hiding (map, gaussianBlur)
 import Vision.Image.Storage.DevIL
 import Linear hiding (lookAt)
 
 import Raytracer
 import StarMap
+import Color
 
 myScene :: Scene
 myScene = Scene { stepSize = 0.15
@@ -30,7 +32,10 @@ myCamera = Camera { position = V3 0 1 (-20)
                   , resolution = (1280, 720) }
 
 main :: IO ()
-main = do
+main = testGaussian
+
+doRender :: IO ()
+doRender = do
     putStrLn "Reading the starmap..."
     starmap <- readMapFromFile "PPM"
     case starmap of
@@ -41,6 +46,24 @@ main = do
             putStrLn "Rendering completed. Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
             _ <- save PNG "out.png" img
+            putStrLn "Applying Gaussian blur..."
+            let (w, _) = resolution myCamera
+            final <- gaussianBlur (w `div` 20) img
+            doesFileExist "bloomed.png" >>= (`when` removeFile "bloomed.png")
+            _ <- save PNG "bloomed.png" final
             putStrLn "Everything done. Thank you!"
             return ()
         _ -> putStrLn "Couldn't load the starmap."
+
+testGaussian :: IO ()
+testGaussian = do
+    let (w, h) = resolution myCamera
+    putStrLn "Forming test image..."
+    img <- computeP $ (fromFunction (ix2 h w)
+        (\(Z :. y :. x) -> if y > x then RGBPixel 0 0 0
+                                    else RGBPixel 255 255 255) :: RGB)
+    putStrLn "Blurring it..."
+    blurred <- bloom 0.25 img
+    doesFileExist "blurred.png" >>= (`when` removeFile "blurred.png")
+    _ <- save PNG "blurred.png" blurred
+    putStrLn "Done."
