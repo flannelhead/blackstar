@@ -1,5 +1,6 @@
 module Main where
 
+import System.Environment (getArgs)
 import System.Directory
 import Control.Monad
 import Vision.Image
@@ -13,12 +14,20 @@ import ConfigFile
 
 main :: IO ()
 main = do
-    putStrLn "Reading default.yaml..."
-    cfg <- decodeFileEither "scenes/default.yaml"
+    args <- getArgs
+    case args of
+        []  -> doStart "default"
+        [f] -> doStart f
+        _   -> putStrLn "Mismatched command line arguments."
+
+doStart :: String -> IO ()
+doStart sceneName = do
+    let filename = "scenes/" ++ sceneName ++ ".yaml"
+    putStrLn $ "Reading " ++ filename ++ "..."
+    cfg <- decodeFileEither filename
     case cfg of
         Right scene -> putStrLn "Config successfully read." >> doRender scene
-        Left  err   -> putStrLn $ "Reading config failed: "
-                         ++ prettyPrintParseException err
+        Left  err   -> putStrLn $ prettyPrintParseException err
 
 doRender :: Scene -> IO ()
 doRender scn = do
