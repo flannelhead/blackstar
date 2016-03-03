@@ -2,7 +2,6 @@ module Main where
 
 import System.Directory
 import Control.Monad
-import Vision.Primitive
 import Vision.Image hiding (map, gaussianBlur)
 import Vision.Image.Storage.DevIL
 import Linear hiding (lookAt)
@@ -15,12 +14,11 @@ myScene :: Scene
 myScene = Scene { stepSize = 0.15
                 , nSteps = 250
                 , camera = myCamera
-                , starIntensity = 0.9
-                , starSaturation = 0.8
+                , bloomStrength = 0.7
+                , starIntensity = 0.7
+                , starSaturation = 0.7
                 , renderDisk = True
-                , diskOpacity = 0.65
-                , diskIntensity = 1
-                , diskSaturation = 1
+                , diskOpacity = 0.95
                 , diskInner = 3
                 , diskOuter = 10 }
 
@@ -32,10 +30,7 @@ myCamera = Camera { position = V3 0 1 (-20)
                   , resolution = (1280, 720) }
 
 main :: IO ()
-main = testGaussian
-
-doRender :: IO ()
-doRender = do
+main = do
     putStrLn "Reading the starmap..."
     starmap <- readMapFromFile "PPM"
     case starmap of
@@ -46,24 +41,11 @@ doRender = do
             putStrLn "Rendering completed. Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
             _ <- save PNG "out.png" img
-            putStrLn "Applying Gaussian blur..."
-            let (w, _) = resolution myCamera
-            final <- gaussianBlur (w `div` 20) img
+            putStrLn "Applying bloom..."
+            final <- bloom (bloomStrength myScene) img
+            putStrLn "Saving to bloomed.pnd..."
             doesFileExist "bloomed.png" >>= (`when` removeFile "bloomed.png")
             _ <- save PNG "bloomed.png" final
             putStrLn "Everything done. Thank you!"
             return ()
         _ -> putStrLn "Couldn't load the starmap."
-
-testGaussian :: IO ()
-testGaussian = do
-    let (w, h) = resolution myCamera
-    putStrLn "Forming test image..."
-    img <- computeP $ (fromFunction (ix2 h w)
-        (\(Z :. y :. x) -> if y > x then RGBPixel 0 0 0
-                                    else RGBPixel 255 255 255) :: RGB)
-    putStrLn "Blurring it..."
-    blurred <- bloom 0.25 img
-    doesFileExist "blurred.png" >>= (`when` removeFile "blurred.png")
-    _ <- save PNG "blurred.png" blurred
-    putStrLn "Done."

@@ -18,8 +18,7 @@ data Rgba = Rgba !Double !Double !Double !Double
 data Rgb = Rgb !Double !Double !Double
 
 fromRGBPixel :: I.RGBPixel -> Rgba
-fromRGBPixel (I.RGBPixel !r !g !b) =
-    Rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) 1
+fromRGBPixel pxl = fromRGBPixelWithAlpha pxl 1
 
 fromRGBPixelWithAlpha :: I.RGBPixel -> Double -> Rgba
 fromRGBPixelWithAlpha (I.RGBPixel !r !g !b) alpha =
@@ -92,4 +91,4 @@ bloom strength src = do
     tmp <- gaussianBlur (w `div` 20) src
     I.computeP $ (I.fromFunction sh
         (\ix -> toRGBPixel1 $ fromRGBPixel1 (src I.! ix) `add`
-        (strength `mul`(fromRGBPixel1 $ tmp I.! ix))) :: I.RGBDelayed)
+        (strength `mul` (fromRGBPixel1 $ tmp I.! ix))) :: I.RGBDelayed)

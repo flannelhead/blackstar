@@ -2,9 +2,9 @@
 
 module Raytracer
     ( render
-    , Scene( Scene, stepSize, nSteps, camera, starIntensity, starSaturation
-           , renderDisk, diskIntensity, diskSaturation, diskOpacity
-           , diskInner, diskOuter)
+    , Scene( Scene, stepSize, nSteps, camera, bloomStrength
+           , starIntensity, starSaturation
+           , renderDisk, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
 import Vision.Primitive
@@ -19,11 +19,10 @@ import Color
 data Scene = Scene { stepSize :: Double
                    , nSteps :: Int
                    , camera :: Camera
+                   , bloomStrength :: Double
                    , starIntensity :: Double
                    , starSaturation :: Double
                    , renderDisk :: Bool
-                   , diskIntensity :: Double
-                   , diskSaturation :: Double
                    , diskOpacity :: Double
                    , diskInner :: Double
                    , diskOuter :: Double }
@@ -87,13 +86,11 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
           phiave = (y'*atan2 z x - y*atan2 z' x') / (y' - y)
 
 diskColor :: Scene -> Double -> Double -> Rgba
-diskColor !scn !r !phi = let
+diskColor !scn !r _ = let
         inner = sqrt (diskInner scn)
         dr = sqrt (diskOuter scn) - inner
-        alpha = 0.3 + 0.7 * (sin (12*pi*(r-inner)/dr + 3*pi/2) + 1) / 2
-        pxl = I.HSVPixel 35 (floor $ 60 * (sin (12*phi) + 1) / 2)
-                  (floor $ 170 + 55 * (sin (12*phi) + 1) / 2)
-    in fromRGBPixelWithAlpha (I.convert pxl) (alpha * diskOpacity scn)
+        alpha = sin (pi/4*(3*(r-inner)/dr + 1))
+    in Rgba 255 255 230 (alpha * diskOpacity scn)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
