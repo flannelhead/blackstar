@@ -1,6 +1,13 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Color where
+module Color
+    ( Rgba(Rgba)
+    , fromRGBPixel
+    , toRGBPixel
+    , blend
+    , bloom
+    , gaussianBlur
+    ) where
 
 import qualified Data.Vector.Unboxed as U
 import Vision.Primitive
@@ -31,16 +38,16 @@ blend (Rgba !tr !tg !tb !ta) (Rgba !br !bg !bb !ba) = let
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
     in Rgba (comp tr br) (comp tg bg) (comp tb bb) a
 
+add :: Rgb -> Rgb -> Rgb
+add (Rgb !r !g !b) (Rgb !r' !g' !b') = Rgb (r+r') (g+g') (b+b')
+
+mul :: Double -> Rgb -> Rgb
+mul !a (Rgb !r !g !b) = Rgb (a*r) (a*g) (a*b)
+
 -- A (hopefully) fast Gaussian blur implementation using a separable kernel
 gaussianBlur :: Monad m => Int -> I.RGB -> m I.RGB
 gaussianBlur !rad !src = let
     sh@(Z :. h :. w) = I.shape src
-
-    add :: Rgb -> Rgb -> Rgb
-    add (Rgb !r !g !b) (Rgb !r' !g' !b') = Rgb (r+r') (g+g') (b+b')
-
-    mul :: Double -> Rgb -> Rgb
-    mul !a (Rgb !r !g !b) = Rgb (a*r) (a*g) (a*b)
 
     kernel :: U.Vector (Double, Int)
     kernel = U.fromList
@@ -73,3 +80,11 @@ gaussianBlur !rad !src = let
         tmp <- I.computeP
             $ (I.fromFunction sh (convolve src kernH) :: I.RGBDelayed)
         I.computeP $ (I.fromFunction sh (convolve tmp kernV) :: I.RGBDelayed)
+
+bloom :: Monad m => Double -> I.RGB -> m I.RGB
+bloom strength src = do
+    let sh@(Z :. _ :. w) = I.shape src
+    tmp <- gaussianBlur (w `div` 20) src
+    I.computeP $ (I.fromFunction sh
+        (\ix -> toRGBPixel1 $ fromRGBPixel1 (src I.! ix) `add`
+        (strength `mul`(fromRGBPixel1 $ tmp I.! ix))) :: I.RGBDelayed)

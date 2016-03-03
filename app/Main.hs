@@ -63,7 +63,7 @@ testGaussian = do
         (\(Z :. y :. x) -> if y > x then RGBPixel 0 0 0
                                     else RGBPixel 255 255 255) :: RGB)
     putStrLn "Blurring it..."
-    blurred <- gaussianBlur (w `div` 20) img
+    blurred <- bloom 0.25 img
     doesFileExist "blurred.png" >>= (`when` removeFile "blurred.png")
     _ <- save PNG "blurred.png" blurred
     putStrLn "Done."
