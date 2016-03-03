@@ -10,6 +10,10 @@ fromRGBPixel :: I.RGBPixel -> Rgba
 fromRGBPixel (I.RGBPixel !r !g !b) =
     Rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) 1
 
+fromRGBPixelWithAlpha :: I.RGBPixel -> Double -> Rgba
+fromRGBPixelWithAlpha (I.RGBPixel !r !g !b) alpha =
+    Rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) alpha
+
 toRGBPixel :: Rgba -> I.RGBPixel
 toRGBPixel (Rgba !r !g !b _) = let convert = max 0 . min 255 . floor in
     I.RGBPixel (convert r) (convert g) (convert b)

@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns #-}
 
-module StarMap (
-    Star, StarTree, readMapFromFile, buildStarTree, sqrnorm, starLookup
+module StarMap
+    ( Star, StarTree, readMapFromFile, buildStarTree, sqrnorm, starLookup
     ) where
 
 import Control.Monad
@@ -64,7 +64,7 @@ starLookup :: StarTree -> Double -> Double -> V3 Double -> Rgba
 starLookup !starmap !intensity !saturation !vel = let
         r = 0.002  -- star sampling radius
         m0 = 1350 :: Double  -- the "minimum visible" magnitude
-        m1 = 930 :: Double -- the "saturated"
+        m1 = 930 :: Double  -- the "saturated" magnitude
         w = 0.0005  -- width parameter of the gaussian function
         nvel = normalize vel
         d2 = sqrnorm $ pos ^-^ nvel  -- the distance from the star on the

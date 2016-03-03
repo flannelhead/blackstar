@@ -1,5 +1,3 @@
-{-# LANGUAGE ScopedTypeVariables #-}
-
 module Main where
 
 import System.Directory
@@ -18,7 +16,7 @@ myScene = Scene { stepSize = 0.15
                 , starIntensity = 0.9
                 , starSaturation = 0.8
                 , renderDisk = True
-                , diskOpacity = 0.8
+                , diskOpacity = 0.65
                 , diskIntensity = 1
                 , diskSaturation = 1
                 , diskInner = 3
@@ -26,8 +24,8 @@ myScene = Scene { stepSize = 0.15
 
 myCamera :: Camera
 myCamera = Camera { position = V3 0 1 (-20)
-                  , lookAt = V3 0 0 0
-                  , upVec = V3 0.2 1 0
+                  , lookAt = V3 2 0 0
+                  , upVec = V3 (-0.2) 1 0
                   , fov = 1.5
                   , resolution = (1280, 720) }
 
@@ -42,7 +40,7 @@ main = do
             img <- computeP $ render myScene startree
             putStrLn "Rendering completed. Saving to out.png..."
             doesFileExist "out.png" >>= (`when` removeFile "out.png")
-            _ <- save PNG "out.png" ((convert img) :: RGB)
+            _ <- save PNG "out.png" img
             putStrLn "Everything done. Thank you!"
             return ()
         _ -> putStrLn "Couldn't load the starmap."

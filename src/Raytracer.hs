@@ -1,12 +1,11 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Raytracer (
-    render,
-    Scene(Scene, stepSize, nSteps, camera, starIntensity, starSaturation,
-          renderDisk, diskIntensity, diskSaturation, diskOpacity, 
-          diskInner, diskOuter),
-    Camera(Camera, position, lookAt, upVec, fov, resolution)
-    ) where
+module Raytracer
+    ( render
+    , Scene( Scene, stepSize, nSteps, camera, starIntensity, starSaturation
+           , renderDisk, diskIntensity, diskSaturation, diskOpacity
+           , diskInner, diskOuter)
+    , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
 import Vision.Primitive
 import qualified Vision.Image as I
@@ -88,7 +87,13 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
           phiave = (y'*atan2 z x - y*atan2 z' x') / (y' - y)
 
 diskColor :: Scene -> Double -> Double -> Rgba
-diskColor !scn !r !phi = Rgba 0 0 255 (diskOpacity scn)
+diskColor !scn !r !phi = let
+        inner = sqrt (diskInner scn)
+        dr = sqrt (diskOuter scn) - inner
+        alpha = 0.3 + 0.7 * (sin (12*pi*(r-inner)/dr + 3*pi/2) + 1) / 2
+        pxl = I.HSVPixel 35 (floor $ 60 * (sin (12*phi) + 1) / 2)
+                  (floor $ 170 + 55 * (sin (12*phi) + 1) / 2)
+    in fromRGBPixelWithAlpha (I.convert pxl) (alpha * diskOpacity scn)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
