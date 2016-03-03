@@ -26,11 +26,12 @@ doStart sceneName = do
     putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
     case cfg of
-        Right scene -> putStrLn "Config successfully read." >> doRender scene
+        Right scene -> putStrLn "Config successfully read."
+                           >> doRender scene sceneName
         Left  err   -> putStrLn $ prettyPrintParseException err
 
-doRender :: Scene -> IO ()
-doRender scn = do
+doRender :: Scene -> String -> IO ()
+doRender scn sceneName = do
     putStrLn "Reading the starmap..."
     starmap <- readMapFromFile "PPM"
     case starmap of
@@ -38,15 +39,20 @@ doRender scn = do
             putStrLn "Starmap read. Rendering..."
             let startree = buildStarTree stars
             img <- computeP $ render scn startree
-            putStrLn "Rendering completed. Saving to out.png..."
-            overwriteImage "out.png" img
+
+            let outName = "output/" ++ sceneName ++ ".png"
+            putStrLn $ "Rendering completed. Saving to " ++ outName ++ "..."
+            doesDirectoryExist "output" >>= (`unless` createDirectory "output")
+            overwriteImage outName img
+
             when (bloomStrength scn /= 0) $ do
                 putStrLn "Applying bloom..."
-                final <- bloom (bloomStrength scn) img
-                putStrLn "Saving to bloomed.pnd..."
-                overwriteImage "bloomed.png" final
+                bloomed <- bloom (bloomStrength scn) img
+                let bloomName = "output/" ++ sceneName ++ "-bloomed.png"
+                putStrLn $ "Saving to " ++ bloomName ++ "..."
+                overwriteImage bloomName bloomed
+
             putStrLn "Everything done. Thank you!"
-            return ()
         _ -> putStrLn "Couldn't load the starmap."
 
 overwriteImage :: FilePath -> RGB -> IO ()
