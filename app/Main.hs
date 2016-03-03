@@ -31,10 +31,11 @@ doRender scn = do
             img <- computeP $ render scn startree
             putStrLn "Rendering completed. Saving to out.png..."
             overwriteImage "out.png" img
-            putStrLn "Applying bloom..."
-            final <- bloom (bloomStrength scn) img
-            putStrLn "Saving to bloomed.pnd..."
-            overwriteImage "bloomed.png" final
+            when (bloomStrength scn /= 0) $ do
+                putStrLn "Applying bloom..."
+                final <- bloom (bloomStrength scn) img
+                putStrLn "Saving to bloomed.pnd..."
+                overwriteImage "bloomed.png" final
             putStrLn "Everything done. Thank you!"
             return ()
         _ -> putStrLn "Couldn't load the starmap."
