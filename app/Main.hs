@@ -20,14 +20,14 @@ myScene = Scene { stepSize = 0.15
                 , renderDisk = True
                 , diskOpacity = 0.95
                 , diskInner = 3
-                , diskOuter = 12 }
+                , diskOuter = 6 }
 
 myCamera :: Camera
-myCamera = Camera { position = V3 30 0.4 3
-                  , lookAt = V3 0 0 0
-                  , upVec = V3 0 1 0.2
-                  , fov = 1
-                  , resolution = (2400, 1800) }
+myCamera = Camera { position = V3 10 1 0
+                  , lookAt = V3 0 0 (-4)
+                  , upVec = V3 0 1 (-0.1)
+                  , fov = 1.2
+                  , resolution = (3200, 2400) }
 
 main :: IO ()
 main = do

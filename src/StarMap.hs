@@ -19,8 +19,11 @@ import Color
 type Star = (V3 Double, (Int, Word8, Word8))
 type StarTree = KdMap Double (V3 Double) (Int, Word8, Word8)
 
+-- Parse the star list in the binary format specified at
+-- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
 readMap :: Get [Star]
 readMap = do
+    -- Skip the header
     skip 28
     nBytes <- remaining
     replicateM (nBytes `div` 28) $ do
@@ -31,11 +34,12 @@ readMap = do
         mag <- getInt16be
         skip 8
         return $ (raDecToCartesian ra dec, starColor' (fromIntegral mag)
-                     . chr $ fromIntegral spectral)
+                 . chr $ fromIntegral spectral)
 
 starColor' :: Int -> Char -> (Int, Word8, Word8)
 starColor' !mag !ch = let (!h, !s) = starColor ch in (mag, h, s)
 
+-- Some nice colour values for different spectral types
 starColor :: Char -> (Word8, Word8)
 starColor 'O' = (114, 99)
 starColor 'B' = (113, 84)

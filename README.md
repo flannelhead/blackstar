@@ -4,9 +4,8 @@ A black hole ray tracer written in Haskell. This is a work in progress.
 ## Goals
 * Parallel ray tracing
 * Be fast
-* Implement the real 4D geodesic equations
-* Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) and [Kerr](https://en.wikipedia.org/wiki/Kerr_metric) black holes
-* Gracefully deal with coordinate singularities - maybe switch to Cartesian coordinates?
+* Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) black holes
+* ~~Gracefully deal with coordinate singularities - maybe switch to Cartesian coordinates?~~ Now using Cartesian coordinates for Schwarzschild
 * Render accretion disks
 * Produce wallpaper quality material by smoothing the images
 * ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
@@ -15,7 +14,13 @@ A black hole ray tracer written in Haskell. This is a work in progress.
 [`friday`](https://hackage.haskell.org/package/friday) was used for fast, parallel computation of the image.
 
 ## Building
-Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar -- +RTS -N`. `llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build. `friday` also requires the `DevIL` library. On Arch Linux the package is called `devil`.
+Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar -- +RTS -N`.
+
+`llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build.
+
+`friday` requires the `DevIL` library. On Arch Linux the package is called `devil`. You should be able to find the package in your distribution's repositories.
+
+Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the image of the celestial sphere. I don't know if I can host it here, so download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project.
 
 ## Things I've learnt
 * Using explicit `Double` datatypes instead of polymorphism via the `Floating` typeclass can make a huge difference in terms of speed
