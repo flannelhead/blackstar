@@ -40,7 +40,6 @@ This project was started when I was taking a general relativity course. On the c
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Parse the config from a YAML file (I might do this soonish)
 * Implement a "fast" preview rendering mode
 * Render more pretty pictures
 * Write a blog post about this!

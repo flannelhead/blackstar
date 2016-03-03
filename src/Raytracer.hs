@@ -1,11 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 
-module Raytracer
-    ( render
-    , Scene( Scene, stepSize, nSteps, camera, bloomStrength
-           , starIntensity, starSaturation
-           , renderDisk, diskOpacity, diskInner, diskOuter )
-    , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
+module Raytracer (render) where
 
 import Vision.Primitive
 import qualified Vision.Image as I
@@ -15,23 +10,7 @@ import Control.Lens
 
 import StarMap
 import Color
-
-data Scene = Scene { stepSize :: Double
-                   , nSteps :: Int
-                   , camera :: Camera
-                   , bloomStrength :: Double
-                   , starIntensity :: Double
-                   , starSaturation :: Double
-                   , renderDisk :: Bool
-                   , diskOpacity :: Double
-                   , diskInner :: Double
-                   , diskOuter :: Double }
-
-data Camera = Camera { position :: V3 Double
-                     , lookAt :: V3 Double
-                     , upVec :: V3 Double
-                     , fov :: Double
-                     , resolution :: (Int, Int) }
+import ConfigFile
 
 data Layer = Layer !Rgba | Bottom !Rgba | None
 
@@ -76,7 +55,7 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
     | r2 < 1 = Bottom $ Rgba 0 0 0 1  -- already entered the photon sphere
     | r2 > 50**2 = Bottom  -- sufficiently far away so the curvature wont affect
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
-    | renderDisk scn && (signum y' /= signum y)
+    | diskOpacity scn /= 0 && (signum y' /= signum y)
         && r2ave > diskInner scn && r2ave < diskOuter scn
         = Layer $ diskColor scn (sqrt r2ave) phiave
     | otherwise = None

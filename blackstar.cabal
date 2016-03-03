@@ -18,6 +18,7 @@ library
   exposed-modules:     Raytracer
                      , StarMap
                      , Color
+                     , ConfigFile
   ghc-options:         -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields -fllvm
   build-depends:       base >= 4.7 && < 5
                      , friday
@@ -27,6 +28,8 @@ library
                      , cereal
                      , kdt
                      , vector
+                     , yaml
+                     , aeson
   default-language:    Haskell2010
 
 executable blackstar
@@ -39,6 +42,7 @@ executable blackstar
                      , friday
                      , friday-devil
                      , linear
+                     , yaml
   default-language:    Haskell2010
 
 source-repository head
