@@ -16,6 +16,8 @@ It is a tribute to David Bowie, referring to his last album.
 ## Implementation
 [`friday`](https://hackage.haskell.org/package/friday) was used for fast, parallel computation of the image.
 
+[`kdt`](https://hackage.haskell.org/package/kdt) was used for fast lookups into a star catalog. I had to customise the library just a tiny bit to be able to serialize and store the trees, so it's included in this repository.
+
 ## Building
 Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar -- +RTS -N`.
 
