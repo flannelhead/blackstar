@@ -22,7 +22,7 @@ Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. Fir
 
 `friday` requires the `DevIL` library. On Arch Linux the package is called `devil`. You should be able to find the package in your distribution's repositories. Windows users can download `DevIL` [here](http://openil.sourceforge.net/download.php).
 
-Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the star tree that is used for rendering the celestial sphere. For convenience, I have included a prebuilt tree in binary form, but you can also build it yourself. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
+Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the star tree that is used for rendering the celestial sphere. For convenience, I have included a prebuilt tree in binary form, but you can also build it yourself. The file is called `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
 
 ## Usage
 When `blackstar` has been built with `stack`, you can optionally install it to the runtime path by running `stack install`. Then you can run it with
