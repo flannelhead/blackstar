@@ -21,7 +21,6 @@ library
                      , ConfigFile
   ghc-options:         -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields -fllvm
   build-depends:       base >= 4.7 && < 5
-                     , friday
                      , linear
                      , lens
                      , bytestring
@@ -31,6 +30,7 @@ library
                      , yaml
                      , aeson
                      , directory
+                     , repa
   default-language:    Haskell2010
 
 executable blackstar
@@ -40,11 +40,11 @@ executable blackstar
   build-depends:       base
                      , blackstar
                      , directory
-                     , friday
-                     , friday-devil
                      , linear
                      , yaml
                      , time
+                     , repa
+                     , JuicyPixels
   default-language:    Haskell2010
 
 source-repository head

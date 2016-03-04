@@ -1,64 +1,69 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, GeneralizedNewtypeDeriving #-}
 
 module Color
-    ( Rgb(Rgb)
-    , Rgba(Rgba)
-    , fromRGBPixel
-    , fromRGBPixelWithAlpha
-    , toRGBPixel
+    ( RGB
+    , RGBA
+    , RGBImage
+    , RGBImageDelayed
+    , HSV
     , addAlpha
+    , dropAlpha
     , blend
     , bloom
     , gaussianBlur
-    ) where
+    , hsvToRGB ) where
 
 import qualified Data.Vector.Unboxed as U
-import Vision.Primitive
-import qualified Vision.Image as I
+import Data.Array.Repa as R
+import Data.Fixed (mod')
 
-data Rgba = Rgba !Double !Double !Double !Double
-data Rgb = Rgb !Double !Double !Double
+type RGBImage = R.Array R.U DIM2 RGB
+type RGBImageDelayed = R.Array R.D DIM2 RGB
 
-fromRGBPixel :: I.RGBPixel -> Rgba
-fromRGBPixel pxl = fromRGBPixelWithAlpha pxl 1
+type RGBA = (Double, Double, Double, Double)
+type RGB = (Double, Double, Double)
+type HSV = (Double, Double, Double)
 
-fromRGBPixelWithAlpha :: I.RGBPixel -> Double -> Rgba
-fromRGBPixelWithAlpha (I.RGBPixel !r !g !b) alpha =
-    Rgba (fromIntegral r) (fromIntegral g) (fromIntegral b) alpha
+hsvToRGB :: HSV -> RGB
+hsvToRGB (!h, !s, !v) = let
+    c = v * s
+    h' = h / 60
+    x = c * (1 - abs ((h' `mod'` 2) - 1))
+    m = v - c
+    rgb h'' | h'' < 1 = (c, x, 0)
+            | h'' < 2 = (x, c, 0)
+            | h'' < 3 = (0, c, x)
+            | h'' < 4 = (0, x, c)
+            | h'' < 5 = (x, 0, c)
+            | h'' < 6 = (c, 0, x)
+            | otherwise = (0, 0, 0)
+    (r, g, b) = rgb h'
+    in (255 * (r + m), 255 * (g + m), 255 * (b + m))
 
-fromRGBPixel1 :: I.RGBPixel -> Rgb
-fromRGBPixel1 (I.RGBPixel !r !g !b) =
-    Rgb (fromIntegral r) (fromIntegral g) (fromIntegral b)
+addAlpha :: RGB -> Double -> RGBA
+addAlpha (!r, !g, !b) !a = (r, g, b, a)
 
-toRGBPixel :: Rgba -> I.RGBPixel
-toRGBPixel (Rgba !r !g !b _) = let convert = floor . max 0 . min 255 in
-    I.RGBPixel (convert r) (convert g) (convert b)
+dropAlpha :: RGBA -> RGB
+dropAlpha (!r, !g, !b, _) = (r, g, b)
 
-toRGBPixel1 :: Rgb -> I.RGBPixel
-toRGBPixel1 (Rgb !r !g !b) = let convert = floor . max 0 . min 255 in
-    I.RGBPixel (convert r) (convert g) (convert b)
-
-addAlpha :: Rgb -> Double -> Rgba
-addAlpha (Rgb !r !g !b) !a = Rgba r g b a
-
-blend :: Rgba -> Rgba -> Rgba
-blend (Rgba !tr !tg !tb !ta) (Rgba !br !bg !bb !ba) = let
+blend :: RGBA -> RGBA -> RGBA
+blend (!tr, !tg, !tb, !ta) (!br, !bg, !bb, !ba) = let
         a = ta + ba * (1 - ta)
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
-    in Rgba (comp tr br) (comp tg bg) (comp tb bb) a
+    in (comp tr br, comp tg bg, comp tb bb, a)
 
-add :: Rgb -> Rgb -> Rgb
-add (Rgb !r !g !b) (Rgb !r' !g' !b') = Rgb (r+r') (g+g') (b+b')
+add :: RGB -> RGB -> RGB
+add (!r, !g, !b) (!r', !g', !b') = (r+r', g+g', b+b')
 
-mul :: Double -> Rgb -> Rgb
-mul !a (Rgb !r !g !b) = Rgb (a*r) (a*g) (a*b)
+mul :: Double -> RGB -> RGB
+mul !a (!r, !g, !b) = (a*r, a*g, a*b)
 
 -- A somewhat fast Gaussian blur implementation using a separable kernel.
 -- This is pretty sketchy and maybe not entirely correct. friday's Gaussian
 -- blur filter doesn't currently support RGB images.
-gaussianBlur :: Monad m => Int -> I.RGB -> m I.RGB
+gaussianBlur :: Monad m => Int -> RGBImage -> m RGBImage
 gaussianBlur !rad !src = let
-    sh@(Z :. h :. w) = I.shape src
+    sh@(Z :. h :. w) = R.extent src
 
     kernel :: U.Vector (Double, Int)
     kernel = U.fromList
@@ -77,26 +82,25 @@ gaussianBlur !rad !src = let
     kernV !(Z :. y :. x) = U.filter (\(_, y', _) -> y' >= 0 && y' < h)
         $ U.map (\(a, dy) -> (a, y+dy, x)) kernel
 
-    convolve :: I.RGB -> (DIM2 -> U.Vector (Double, Int, Int))
-                -> DIM2 -> I.RGBPixel
+    convolve :: RGBImage -> (DIM2 -> U.Vector (Double, Int, Int))
+                -> DIM2 -> RGB
     convolve img !kern !ix = let
         !k = kern ix
         !n = norms U.! (U.length k - 1)
-        in toRGBPixel1 . mul n $ U.foldl' (acc img) (Rgb 0 0 0) k
+        in mul n $ U.foldl' (acc img) (0, 0, 0) k
 
-    acc :: I.RGB -> Rgb -> (Double, Int, Int) -> Rgb
+    acc :: RGBImage -> RGB -> (Double, Int, Int) -> RGB
     acc !img !pxl (!weight, !y, !x) = add pxl
-        $ weight `mul` (fromRGBPixel1 $ img I.! ix2 y x)
+        $ weight `mul` (img R.! ix2 y x)
     in do
-        tmp <- I.computeP
-            $ (I.fromFunction sh (convolve src kernH) :: I.RGBDelayed)
-        I.computeP $ (I.fromFunction sh (convolve tmp kernV) :: I.RGBDelayed)
+        tmp <- R.computeUnboxedP
+            $ (R.fromFunction sh (convolve src kernH))
+        R.computeUnboxedP $ (R.fromFunction sh (convolve tmp kernV))
 
 -- Apply Gaussian blur and add it to the image weighted by a constant
-bloom :: Monad m => Double -> I.RGB -> m I.RGB
+bloom :: Monad m => Double -> RGBImage -> m RGBImage
 bloom strength src = do
-    let sh@(Z :. _ :. w) = I.shape src
+    let sh@(Z :. _ :. w) = R.extent src
     tmp <- gaussianBlur (w `div` 20) src
-    I.computeP $ (I.fromFunction sh
-        (\ix -> toRGBPixel1 $ fromRGBPixel1 (src I.! ix) `add`
-        (strength `mul` (fromRGBPixel1 $ tmp I.! ix))) :: I.RGBDelayed)
+    R.computeUnboxedP $ (R.fromFunction sh
+        (\ix -> (src R.! ix) `add` (strength `mul` (tmp R.! ix))))

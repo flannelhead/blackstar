@@ -3,10 +3,10 @@ module Main where
 import System.Environment (getArgs)
 import System.Directory
 import Control.Monad
-import Vision.Image
-import Vision.Image.Storage.DevIL
+import qualified Data.Array.Repa as R
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import Data.Time.Clock.POSIX (getPOSIXTime)
+import Codec.Picture
 
 import Raytracer
 import StarMap
@@ -68,7 +68,7 @@ doRender scn sceneName = do
         Just startree -> do
             putStrLn "Star tree read. Rendering..."
             time1 <- (round <$> getPOSIXTime) :: IO Int
-            img <- computeP $ render scn startree
+            img <- R.computeUnboxedP $ render scn startree
             time2 <- round <$> getPOSIXTime
             let secs = time2 - time1
             putStrLn $ "Rendering completed in " ++ show (secs `div` 60)

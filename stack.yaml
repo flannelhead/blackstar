@@ -12,10 +12,7 @@ packages:
 #     commit: 31b27174064bb2d00b96a2a518ce665d48aa834e
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
-extra-deps:
-- friday-0.2.2.0
-- friday-devil-0.1.1.1
-- ratio-int-0.1.2
+extra-deps: []
 
 # Override default flag values for local packages and extra-deps
 flags: {}

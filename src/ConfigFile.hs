@@ -3,14 +3,14 @@
 module ConfigFile
     ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength
            , starIntensity, starSaturation
-           , diskRgb, diskOpacity, diskInner, diskOuter )
+           , diskRGB, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
 import Data.Yaml
 import Data.Aeson.Types
 import Linear
 
-import Color (Rgb(Rgb))
+import Color (RGB)
 
 data Scene = Scene { safeDistance :: Double
                    , stepSize :: Double
@@ -18,7 +18,7 @@ data Scene = Scene { safeDistance :: Double
                    , bloomStrength :: Double
                    , starIntensity :: Double
                    , starSaturation :: Double
-                   , diskRgb :: Rgb
+                   , diskRGB :: RGB
                    , diskOpacity :: Double
                    , diskInner :: Double
                    , diskOuter :: Double }
@@ -33,11 +33,6 @@ instance FromJSON (V3 Double) where
     parseJSON vec = do
         [x, y, z] <- parseJSON vec
         return $ V3 x y z
-
-instance FromJSON Rgb where
-    parseJSON vec = do
-        [r, g, b] <- parseJSON vec
-        return $ Rgb r g b
 
 instance FromJSON Camera where
     parseJSON (Object v) = Camera            <$>
@@ -56,8 +51,8 @@ instance FromJSON Scene where
                            v .:? "bloomStrength"  .!= 0.4  <*>
                            v .:? "starIntensity"  .!= 0.7  <*>
                            v .:? "starSaturation" .!= 0.7  <*>
-                           v .:? "diskRgb"
-                             .!= Rgb 255 255 230           <*>
+                           v .:? "diskRGB"
+                             .!= (255, 255, 230)           <*>
                            v .:? "diskOpacity"    .!= 0    <*>
                            v .:? "diskInner"      .!= 3    <*>
                            v .:? "diskOuter"      .!= 12
