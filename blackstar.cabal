@@ -26,8 +26,8 @@ library
                      , lens
                      , bytestring
                      , cereal
-                     , kdt
                      , vector
+                     , kdt
                      , yaml
                      , aeson
   default-language:    Haskell2010

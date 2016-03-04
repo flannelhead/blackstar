@@ -1,4 +1,5 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE BangPatterns, DeriveGeneric, TypeSynonymInstances,
+             FlexibleInstances #-}
 
 module StarMap
     ( Star, StarTree, readMapFromFile, buildStarTree, sqrnorm, starLookup
@@ -8,6 +9,7 @@ import Control.Monad
 import Data.Word
 import Data.Char
 import qualified Data.ByteString as B
+import Data.Serialize
 import Data.Serialize.Get
 import Data.Serialize.IEEE754
 import Data.KdMap.Static
@@ -18,6 +20,16 @@ import Color
 
 type Star = (V3 Double, (Int, Word8, Word8))
 type StarTree = KdMap Double (V3 Double) (Int, Word8, Word8)
+
+instance Serialize StarTree
+
+instance Serialize (V3 Double -> V3 Double -> Double) where
+    put _ = put ""
+    get = return (defaultSqrDist v3AsList)
+
+instance Serialize (V3 Double -> [Double]) where
+    put _ = put ""
+    get = return v3AsList
 
 -- Parse the star list in the binary format specified at
 -- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
@@ -59,7 +71,10 @@ readMapFromFile path = do
     return $ runGet readMap bs
 
 buildStarTree :: [Star] -> StarTree
-buildStarTree stars = build (\(V3 !x !y !z) -> [x, y, z]) stars
+buildStarTree stars = build v3AsList stars
+
+v3AsList :: V3 Double -> [Double]
+v3AsList (V3 !x !y !z) = [x, y, z]
 
 sqrnorm :: V3 Double -> Double
 sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
