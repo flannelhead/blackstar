@@ -1,12 +1,14 @@
 # blackstar
-A black hole ray tracer written in Haskell. This is a work in progress.
+A black hole ray tracer written in Haskell.
+
+![An example image](https://raw.githubusercontent.com/flannelhead/blackstar/master/example.png)
 
 ## Goals
-* Parallel ray tracing
-* Be fast
+* Fast, parallel ray tracing
 * Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) black holes
 * ~~Gracefully deal with coordinate singularities - maybe switch to Cartesian coordinates?~~ Now using Cartesian coordinates for Schwarzschild
 * Render accretion disks
+* Use a star catalog for the celestial sphere
 * Produce wallpaper quality material by smoothing the images
 * ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
 
@@ -38,7 +40,9 @@ The rendered files go into the folder `output`, named `scenename.png` and `scene
 
 The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters.
 
-If no scene name is passed, `blackstar` will render the `default` scene.
+If no scene name is passed, `blackstar` will render the `default` scene. The example image is exactly this scene.
+
+Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved).
 
 ## Implementation
 [`friday`](https://hackage.haskell.org/package/friday) was used for fast, parallel computation of the image.
@@ -51,7 +55,7 @@ If no scene name is passed, `blackstar` will render the `default` scene.
 * How to spell Schwarzchild correctly
 
 ## Inspiration
-This project was heavily inspired by [this excellent article](http://rantonels.github.io/starless/) and the [Python code](http://github.com/rantonels/starless).
+This project was heavily inspired by [this excellent article](http://rantonels.github.io/starless/) and the [Python code](http://github.com/rantonels/starless) by [rantonels](https://github.com/rantonels). Without him, this project would never have born. You'll most certainly notice some similarities but also differences.
 
 The movie Interstellar did an excellent rendition of a black hole. They also published a [paper](http://iopscience.iop.org/article/10.1088/0264-9381/32/6/065001) describing their discoveries.
 
@@ -60,12 +64,12 @@ This project was started when I was taking a general relativity course. On the c
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Render more pretty pictures
 * Write a blog post about this!
 * Learn more about GHC and optimize the heck out of this
-* Faster Gaussian blur (a minor thing)
 * Better CLI
 * Better instructions for Windows
+* Faster Gaussian blur (a minor thing, perhaps `friday` will have this some day)
+* Better progress reporting (might be hard to do)
 * Kerr metric (won't probably happen)
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
