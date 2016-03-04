@@ -1,10 +1,12 @@
 {-# LANGUAGE BangPatterns #-}
 
 module Color
-    ( Rgba(Rgba)
+    ( Rgb(Rgb)
+    , Rgba(Rgba)
     , fromRGBPixel
     , fromRGBPixelWithAlpha
     , toRGBPixel
+    , addAlpha
     , blend
     , bloom
     , gaussianBlur
@@ -35,6 +37,9 @@ toRGBPixel (Rgba !r !g !b _) = let convert = floor . max 0 . min 255 in
 toRGBPixel1 :: Rgb -> I.RGBPixel
 toRGBPixel1 (Rgb !r !g !b) = let convert = floor . max 0 . min 255 in
     I.RGBPixel (convert r) (convert g) (convert b)
+
+addAlpha :: Rgb -> Double -> Rgba
+addAlpha (Rgb !r !g !b) !a = Rgba r g b a
 
 blend :: Rgba -> Rgba -> Rgba
 blend (Rgba !tr !tg !tb !ta) (Rgba !br !bg !bb !ba) = let

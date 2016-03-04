@@ -1,20 +1,24 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module ConfigFile
-    ( Scene( Scene, stepSize, camera, bloomStrength
+    ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength
            , starIntensity, starSaturation
-           , diskOpacity, diskInner, diskOuter )
+           , diskRgb, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
 import Data.Yaml
 import Data.Aeson.Types
 import Linear
 
-data Scene = Scene { stepSize :: Double
+import Color (Rgb(Rgb))
+
+data Scene = Scene { safeDistance :: Double
+                   , stepSize :: Double
                    , camera :: Camera
                    , bloomStrength :: Double
                    , starIntensity :: Double
                    , starSaturation :: Double
+                   , diskRgb :: Rgb
                    , diskOpacity :: Double
                    , diskInner :: Double
                    , diskOuter :: Double }
@@ -30,6 +34,11 @@ instance FromJSON (V3 Double) where
         [x, y, z] <- parseJSON vec
         return $ V3 x y z
 
+instance FromJSON Rgb where
+    parseJSON vec = do
+        [r, g, b] <- parseJSON vec
+        return $ Rgb r g b
+
 instance FromJSON Camera where
     parseJSON (Object v) = Camera            <$>
                            v .: "position"   <*>
@@ -41,12 +50,14 @@ instance FromJSON Camera where
     parseJSON invalid = typeMismatch "Camera" invalid
 
 instance FromJSON Scene where
-    parseJSON (Object v) = Scene <$>
+    parseJSON (Object v) = Scene 0                         <$>
                            v .:? "stepSize"       .!= 0.15 <*>
                            v .:  "camera"                  <*>
                            v .:? "bloomStrength"  .!= 0.4  <*>
                            v .:? "starIntensity"  .!= 0.7  <*>
                            v .:? "starSaturation" .!= 0.7  <*>
+                           v .:? "diskRgb"
+                             .!= Rgb 255 255 230           <*>
                            v .:? "diskOpacity"    .!= 0    <*>
                            v .:? "diskInner"      .!= 3    <*>
                            v .:? "diskOuter"      .!= 12

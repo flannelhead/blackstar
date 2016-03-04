@@ -31,7 +31,8 @@ render :: Scene -> StarTree -> I.RGBDelayed
 render !scn !startree = I.fromFunction (ix2 yres xres) (traceRay scn' startree)
     where cam = camera scn
           (xres, yres) = resolution cam
-          scn' = scn { diskInner = (diskInner scn)**2
+          scn' = scn { safeDistance = max (50**2) (2 * (sqrnorm $ position cam))
+                     , diskInner = (diskInner scn)**2
                      , diskOuter = (diskOuter scn)**2 }
 
 traceRay :: Scene -> StarTree -> Point -> I.RGBPixel
@@ -52,8 +53,8 @@ colorize !scn !startree !next !crd = let newCrd = next crd in
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
 findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
-    | r2 < 1 = Bottom $ Rgba 0 0 0 1  -- already entered the photon sphere
-    | r2 > 50**2 = Bottom  -- sufficiently far away so the curvature wont affect
+    | r2 < 1 = Bottom $ Rgba 0 0 0 1  -- already passed the event horizon
+    | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
     | diskOpacity scn /= 0 && (signum y' /= signum y)
         && r2ave > diskInner scn && r2ave < diskOuter scn
@@ -69,8 +70,7 @@ diskColor !scn !r _ = let
         inner = sqrt (diskInner scn)
         dr = sqrt (diskOuter scn) - inner
         alpha = sin (pi*(1 - (r-inner)/dr)^(2 :: Int))
-    in fromRGBPixelWithAlpha (I.convert $ I.HSVPixel 30 25 255)
-           (alpha * diskOpacity scn)
+    in addAlpha (diskRgb scn) (alpha * diskOpacity scn)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
