@@ -15,20 +15,29 @@ import ConfigFile
 main :: IO ()
 main = do
     args <- getArgs
-    case args of
-        []  -> doStart "default"
-        [f] -> doStart f
-        _   -> putStrLn "Mismatched command line arguments."
+    let filteredArgs = filter (`notElem` ["-p", "--preview"]) args
+    let preview = length args /= length filteredArgs
+    case filteredArgs of
+        []  -> doStart "default" preview
+        [f] -> doStart f preview
+        _   -> putStrLn "USAGE: blackstar [-p|--preview] scenename"
 
-doStart :: String -> IO ()
-doStart sceneName = do
+doStart :: String -> Bool -> IO ()
+doStart sceneName preview = do
     let filename = "scenes/" ++ sceneName ++ ".yaml"
     putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
     case cfg of
         Right scene -> putStrLn "Config successfully read."
-                           >> doRender scene sceneName
+                           >> doRender (prepareScene scene preview) sceneName
         Left  err   -> putStrLn $ prettyPrintParseException err
+
+prepareScene :: Scene -> Bool -> Scene
+prepareScene scn preview = let
+    cam = camera scn
+    (w, h) = resolution cam
+    newRes = if w >= h then (300, 300 * h `div` w) else (300 * w `div` h, 300)
+    in if preview then scn { camera = cam { resolution = newRes } } else scn
 
 readStarTree :: IO (Maybe StarTree)
 readStarTree = do
