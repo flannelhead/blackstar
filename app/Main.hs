@@ -20,7 +20,7 @@ main = do
     case filteredArgs of
         []  -> doStart "default" preview
         [f] -> doStart f preview
-        _   -> putStrLn "USAGE: blackstar [-p|--preview] scenename"
+        _   -> putStrLn "USAGE: blackstar [-p|--preview] [scenename]"
 
 doStart :: String -> Bool -> IO ()
 doStart sceneName preview = do

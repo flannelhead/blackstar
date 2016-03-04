@@ -13,19 +13,37 @@ A black hole ray tracer written in Haskell. This is a work in progress.
 ## What about the name?
 It is a tribute to David Bowie, referring to his last album.
 
+## Building
+Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`.
+
+`llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build. This is the case at least on Windows.
+
+`friday` requires the `DevIL` library. On Arch Linux the package is called `devil`. You should be able to find the package in your distribution's repositories. Windows users can download `DevIL` [here](http://openil.sourceforge.net/download.php).
+
+Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the star tree that is used for rendering the celestial sphere. For convenience, I have included a prebuilt tree in binary form, but you can also build it yourself. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
+
+## Usage
+When `blackstar` has been built with `stack`, you can optionally install it to the runtime path by running `stack install`. Then you can run it with
+```
+blackstar [-p|--preview] scenename
+```
+If you don't want to install it, run this in the project's root folder:
+```
+stack exec blackstar -- [-p|--preview] [scenename]
+```
+
+Scenes are defined using YAML config files. Look in the `scenes` folder for examples. `blackstar` looks for scenes under the `scenes` folder, so you'll have to put your scenes there, too. The scene file name should be passed to `blackstar` without the `.yaml` ending.
+
+The rendered files go into the folder `output`, named `scenename.png` and `scenename-bloomed.png`.
+
+The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters.
+
+If no scene name is passed, `blackstar` will render the `default` scene.
+
 ## Implementation
 [`friday`](https://hackage.haskell.org/package/friday) was used for fast, parallel computation of the image.
 
 [`kdt`](https://hackage.haskell.org/package/kdt) was used for fast lookups into a star catalog. I had to customise the library just a tiny bit to be able to serialize and store the trees, so it's included in this repository.
-
-## Building
-Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions. The application can be then run by calling `stack exec blackstar -- +RTS -N`.
-
-`llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build.
-
-`friday` requires the `DevIL` library. On Arch Linux the package is called `devil`. You should be able to find the package in your distribution's repositories.
-
-Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the star tree that is used for rendering the celestial sphere. For convenience, I have included a prebuilt tree in binary form, but you can also build it yourself. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
 
 ## Things I've learnt
 * Using explicit `Double` datatypes instead of polymorphism via the `Floating` typeclass can make a huge difference in terms of speed
@@ -42,11 +60,12 @@ This project was started when I was taking a general relativity course. On the c
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Implement a "fast" preview rendering mode
 * Render more pretty pictures
 * Write a blog post about this!
 * Learn more about GHC and optimize the heck out of this
-* Faster Gaussian blur
+* Faster Gaussian blur (a minor thing)
+* Better CLI
+* Better instructions for Windows
 * Kerr metric (won't probably happen)
 
-Pull requests are welcome!
+Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
