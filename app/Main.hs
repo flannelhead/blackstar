@@ -30,14 +30,33 @@ doStart sceneName = do
                            >> doRender scene sceneName
         Left  err   -> putStrLn $ prettyPrintParseException err
 
+readStarTree :: IO (Maybe StarTree)
+readStarTree = do
+    let treePath = "stars.kdt"
+    eitherTree <- readTreeFromFile treePath
+    case eitherTree of
+        Right tree -> return $ Just tree
+        Left  err  -> do
+            putStrLn $ err ++ "Generating the tree..."
+            let mapPath = "PPM"
+            eitherMap <- readMapFromFile mapPath
+            case eitherMap of
+                Right stars -> do
+                    let tree' = buildStarTree stars
+                    writeTreeToFile treePath tree'
+                    putStrLn $ "Tree saved to " ++ treePath ++ "."
+                    return $ Just tree'
+                Left  err   -> do
+                    putStrLn $ err
+                    return Nothing
+
 doRender :: Scene -> String -> IO ()
 doRender scn sceneName = do
-    putStrLn "Reading the starmap..."
-    starmap <- readMapFromFile "PPM"
-    case starmap of
-        Right stars -> do
-            putStrLn "Starmap read. Rendering..."
-            let startree = buildStarTree stars
+    putStrLn "Reading the star tree..."
+    mStarTree <- readStarTree
+    case mStarTree of
+        Just startree -> do
+            putStrLn "Star tree read. Rendering..."
             img <- computeP $ render scn startree
 
             let outName = "output/" ++ sceneName ++ ".png"
@@ -53,7 +72,7 @@ doRender scn sceneName = do
                 overwriteImage bloomName bloomed
 
             putStrLn "Everything done. Thank you!"
-        _ -> putStrLn "Couldn't load the starmap."
+        _ -> putStrLn "Couldn't load the star tree."
 
 overwriteImage :: FilePath -> RGB -> IO ()
 overwriteImage path img = do

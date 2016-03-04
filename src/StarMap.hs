@@ -2,9 +2,10 @@
              FlexibleInstances #-}
 
 module StarMap
-    ( Star, StarTree, readMapFromFile, buildStarTree, sqrnorm, starLookup
-    ) where
+    ( Star, StarTree, readMapFromFile, readTreeFromFile, writeTreeToFile
+    , buildStarTree, sqrnorm, starLookup ) where
 
+import System.Directory
 import Control.Monad
 import Data.Word
 import Data.Char
@@ -24,12 +25,12 @@ type StarTree = KdMap Double (V3 Double) (Int, Word8, Word8)
 instance Serialize StarTree
 
 instance Serialize (V3 Double -> V3 Double -> Double) where
-    put _ = put ""
-    get = return (defaultSqrDist v3AsList)
+    put _ = put (0 :: Word8)
+    get = skip 1 >> return (defaultSqrDist v3AsList)
 
 instance Serialize (V3 Double -> [Double]) where
-    put _ = put ""
-    get = return v3AsList
+    put _ = put (0 :: Word8)
+    get = skip 1 >> return v3AsList
 
 -- Parse the star list in the binary format specified at
 -- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
@@ -65,10 +66,29 @@ starColor _   = (0, 0)
 raDecToCartesian :: Double -> Double -> V3 Double
 raDecToCartesian ra dec = V3 (cos dec*cos ra) (cos dec*sin ra) (sin dec)
 
+readSafe :: FilePath -> IO (Either String B.ByteString)
+readSafe path = do
+    exists <- doesFileExist path
+    if exists then fmap Right $ B.readFile path
+              else return . Left $ "Error: file " ++ path
+                  ++ " doesn't exist.\n"
+
 readMapFromFile :: FilePath -> IO (Either String [Star])
 readMapFromFile path = do
-    bs <- B.readFile path
-    return $ runGet readMap bs
+    ebs <- readSafe path
+    case ebs of
+        Right bs -> return $ runGet readMap bs
+        Left err -> return $ Left err
+
+readTreeFromFile :: FilePath -> IO (Either String StarTree)
+readTreeFromFile path = do
+    ebs <- readSafe path
+    case ebs of
+        Right bs -> return $ decode bs
+        Left err -> return $ Left err
+
+writeTreeToFile :: FilePath -> StarTree -> IO ()
+writeTreeToFile path tree = B.writeFile path $ encode tree
 
 buildStarTree :: [Star] -> StarTree
 buildStarTree stars = build v3AsList stars
