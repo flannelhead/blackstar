@@ -24,11 +24,13 @@ type StarTree = KdMap Double (V3 Double) (Int, Word8, Word8)
 
 instance Serialize StarTree
 
-instance Serialize (V3 Double -> V3 Double -> Double) where
+-- We can't serialize the functions but let's hack around it so that we can
+-- serialize the KdMap anyway
+instance Serialize (SquaredDistanceFn Double (V3 Double)) where
     put _ = put (0 :: Word8)
     get = skip 1 >> return (defaultSqrDist v3AsList)
 
-instance Serialize (V3 Double -> [Double]) where
+instance Serialize (PointAsListFn Double (V3 Double)) where
     put _ = put (0 :: Word8)
     get = skip 1 >> return v3AsList
 
@@ -102,6 +104,9 @@ sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
 starLookup :: StarTree -> Double -> Double -> V3 Double -> Rgba
 starLookup !starmap !intensity !saturation !vel = let
         r = 0.002  -- star sampling radius
+        -- The magnitude value tells about the intensity of the star. The
+        -- brighter the star, the larger the magnitude. These constants are
+        -- used for adjusting the dynamics of the rendered celestial sphere
         m0 = 1350 :: Double  -- the "minimum visible" magnitude
         m1 = 930 :: Double  -- the "saturated" magnitude
         w = 0.0005  -- width parameter of the gaussian function

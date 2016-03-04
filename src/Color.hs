@@ -48,7 +48,9 @@ add (Rgb !r !g !b) (Rgb !r' !g' !b') = Rgb (r+r') (g+g') (b+b')
 mul :: Double -> Rgb -> Rgb
 mul !a (Rgb !r !g !b) = Rgb (a*r) (a*g) (a*b)
 
--- A (hopefully) fast Gaussian blur implementation using a separable kernel
+-- A somewhat fast Gaussian blur implementation using a separable kernel.
+-- This is pretty sketchy and maybe not entirely correct. friday's Gaussian
+-- blur filter doesn't currently support RGB images.
 gaussianBlur :: Monad m => Int -> I.RGB -> m I.RGB
 gaussianBlur !rad !src = let
     sh@(Z :. h :. w) = I.shape src
@@ -85,6 +87,7 @@ gaussianBlur !rad !src = let
             $ (I.fromFunction sh (convolve src kernH) :: I.RGBDelayed)
         I.computeP $ (I.fromFunction sh (convolve tmp kernV) :: I.RGBDelayed)
 
+-- Apply Gaussian blur and add it to the image weighted by a constant
 bloom :: Monad m => Double -> I.RGB -> m I.RGB
 bloom strength src = do
     let sh@(Z :. _ :. w) = I.shape src
