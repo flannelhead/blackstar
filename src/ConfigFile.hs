@@ -3,7 +3,7 @@
 module ConfigFile
     ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength
            , starIntensity, starSaturation
-           , diskRGB, diskOpacity, diskInner, diskOuter )
+           , diskColor, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
 import Data.Yaml
@@ -18,7 +18,7 @@ data Scene = Scene { safeDistance :: Double
                    , bloomStrength :: Double
                    , starIntensity :: Double
                    , starSaturation :: Double
-                   , diskRGB :: RGB
+                   , diskColor :: RGB
                    , diskOpacity :: Double
                    , diskInner :: Double
                    , diskOuter :: Double }
@@ -51,8 +51,8 @@ instance FromJSON Scene where
                            v .:? "bloomStrength"  .!= 0.4  <*>
                            v .:? "starIntensity"  .!= 0.7  <*>
                            v .:? "starSaturation" .!= 0.7  <*>
-                           v .:? "diskRGB"
-                             .!= (255, 255, 230)           <*>
+                           v .:? "diskHSV"
+                             .!= (60, 0.1, 0.95)           <*>
                            v .:? "diskOpacity"    .!= 0    <*>
                            v .:? "diskInner"      .!= 3    <*>
                            v .:? "diskOuter"      .!= 12

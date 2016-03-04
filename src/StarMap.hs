@@ -53,7 +53,7 @@ starColor' !mag !ch = let (!h, !s) = starColor ch in (mag, h, s)
 
 -- Some nice colour values for different spectral types
 starColor :: Char -> (Double, Double)
-starColor 'O' = (228, 0.39)
+starColor 'O' = (227, 0.39)
 starColor 'B' = (226, 0.33)
 starColor 'A' = (224, 0.21)
 starColor 'F' = (234, 0.03)
@@ -110,12 +110,15 @@ starLookup !starmap !intensity !saturation !vel = let
         nvel = normalize vel
         d2 = sqrnorm $ pos ^-^ nvel  -- the distance from the star on the
                                      -- celestial sphere surface
-        a = log intensity / (m0 - m1)
+        -- The number 255 originates from the original algorithm with Word8
+        -- pixels but was left in because it seems to nicely contribute to the
+        -- rendering of the stars. It kind of determines the dynamic range.
+        a = log (255 * intensity) / (m0 - m1)
         (pos, (mag, hue, sat)) = nearest starmap nvel
         -- Conversion from the log magnitude scale to linear brightness
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
-        val = max 0 . min intensity
-              . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
+        val = min intensity . (/ 255)
+            . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
     in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
                    else (0, 0, 0, 1)

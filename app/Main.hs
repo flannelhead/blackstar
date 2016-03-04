@@ -6,7 +6,6 @@ import Control.Monad
 import qualified Data.Array.Repa as R
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import Data.Time.Clock.POSIX (getPOSIXTime)
-import Codec.Picture
 
 import Raytracer
 import StarMap
@@ -89,8 +88,8 @@ doRender scn sceneName = do
             putStrLn "Everything done. Thank you!"
         _ -> putStrLn "Couldn't load the star tree."
 
-overwriteImage :: FilePath -> RGB -> IO ()
+overwriteImage :: FilePath -> RGBImage -> IO ()
 overwriteImage path img = do
     doesFileExist path >>= (`when` removeFile path)
-    _ <- save PNG path img
+    _ <- savePNG img path
     return ()

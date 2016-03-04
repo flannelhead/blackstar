@@ -1,11 +1,12 @@
-{-# LANGUAGE BangPatterns, GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Color
     ( RGB
     , RGBA
+    , HSV
     , RGBImage
     , RGBImageDelayed
-    , HSV
+    , savePNG
     , addAlpha
     , dropAlpha
     , blend
@@ -14,8 +15,14 @@ module Color
     , hsvToRGB ) where
 
 import qualified Data.Vector.Unboxed as U
-import Data.Array.Repa as R
+import qualified Data.Vector.Storable as S
+import qualified Data.Array.Repa as R
+import Data.Array.Repa.Index
+import qualified Data.Array.Repa.Repr.Unboxed as RU
+import qualified Data.ByteString.Lazy as B
 import Data.Fixed (mod')
+import Codec.Picture.Types
+import Codec.Picture.Saving
 
 type RGBImage = R.Array R.U DIM2 RGB
 type RGBImageDelayed = R.Array R.D DIM2 RGB
@@ -23,6 +30,20 @@ type RGBImageDelayed = R.Array R.D DIM2 RGB
 type RGBA = (Double, Double, Double, Double)
 type RGB = (Double, Double, Double)
 type HSV = (Double, Double, Double)
+
+rgbImageToImage :: RGBImage -> DynamicImage
+rgbImageToImage img = let
+    (r, g, b) = RU.unzip3 img
+    Z :. h :. w = R.extent img
+    res = Image { imageWidth = w
+                , imageHeight = h
+                , imageData = S.map (floor . max 0 . min 255 . (* 255))
+                    . S.convert . R.toUnboxed
+                    . R.computeUnboxedS $ R.interleave3 r g b }
+    in ImageRGB8 res
+
+savePNG :: RGBImage -> FilePath -> IO ()
+savePNG img path = B.writeFile path . imageToPng $ rgbImageToImage img
 
 hsvToRGB :: HSV -> RGB
 hsvToRGB (!h, !s, !v) = let
@@ -38,7 +59,7 @@ hsvToRGB (!h, !s, !v) = let
             | h'' < 6 = (c, 0, x)
             | otherwise = (0, 0, 0)
     (r, g, b) = rgb h'
-    in (255 * (r + m), 255 * (g + m), 255 * (b + m))
+    in (r + m, g + m, b + m)
 
 addAlpha :: RGB -> Double -> RGBA
 addAlpha (!r, !g, !b) !a = (r, g, b, a)
@@ -92,10 +113,8 @@ gaussianBlur !rad !src = let
     acc :: RGBImage -> RGB -> (Double, Int, Int) -> RGB
     acc !img !pxl (!weight, !y, !x) = add pxl
         $ weight `mul` (img R.! ix2 y x)
-    in do
-        tmp <- R.computeUnboxedP
-            $ (R.fromFunction sh (convolve src kernH))
-        R.computeUnboxedP $ (R.fromFunction sh (convolve tmp kernV))
+    in do tmp <- R.computeUnboxedP $ (R.fromFunction sh (convolve src kernH))
+          R.computeUnboxedP $ (R.fromFunction sh (convolve tmp kernV))
 
 -- Apply Gaussian blur and add it to the image weighted by a constant
 bloom :: Monad m => Double -> RGBImage -> m RGBImage

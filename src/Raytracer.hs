@@ -33,7 +33,8 @@ render !scn !startree = R.fromFunction (ix2 h w) (traceRay scn' startree)
           (w, h) = resolution cam
           scn' = scn { safeDistance = max (50**2) (2 * (sqrnorm $ position cam))
                      , diskInner = (diskInner scn)**2
-                     , diskOuter = (diskOuter scn)**2 }
+                     , diskOuter = (diskOuter scn)**2
+                     , diskColor = hsvToRGB $ diskColor scn }
 
 traceRay :: Scene -> StarTree -> DIM2 -> RGB
 traceRay !scn !startree !pt = let
@@ -59,19 +60,19 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
     | diskOpacity scn /= 0 && (signum y' /= signum y)
         && r2ave > diskInner scn && r2ave < diskOuter scn
-        = Layer $ diskColor scn (sqrt r2ave) phiave
+        = Layer $ diskColor' scn (sqrt r2ave) phiave
     | otherwise = None
     where r2 = sqrnorm pos
           r2' = sqrnorm newPos
           r2ave = (y'*r2 - y*r2') / (y' - y)
           phiave = (y'*atan2 z x - y*atan2 z' x') / (y' - y)
 
-diskColor :: Scene -> Double -> Double -> RGBA
-diskColor !scn !r _ = let
+diskColor' :: Scene -> Double -> Double -> RGBA
+diskColor' !scn !r _ = let
         inner = sqrt (diskInner scn)
         dr = sqrt (diskOuter scn) - inner
         alpha = sin (pi*(1 - (r-inner)/dr)^(2 :: Int))
-    in addAlpha (diskRGB scn) (alpha * diskOpacity scn)
+    in addAlpha (diskColor scn) (alpha * diskOpacity scn)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
        -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
