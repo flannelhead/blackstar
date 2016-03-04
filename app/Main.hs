@@ -6,6 +6,7 @@ import Control.Monad
 import Vision.Image
 import Vision.Image.Storage.DevIL
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
+import Data.Time.Clock.POSIX (getPOSIXTime)
 
 import Raytracer
 import StarMap
@@ -28,7 +29,7 @@ doStart sceneName preview = do
     putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
     case cfg of
-        Right scene -> putStrLn "Config successfully read."
+        Right scene -> putStrLn "Scene successfully read."
                            >> doRender (prepareScene scene preview) sceneName
         Left  err   -> putStrLn $ prettyPrintParseException err
 
@@ -55,8 +56,8 @@ readStarTree = do
                     writeTreeToFile treePath tree'
                     putStrLn $ "Tree saved to " ++ treePath ++ "."
                     return $ Just tree'
-                Left  err   -> do
-                    putStrLn $ err
+                Left  err'  -> do
+                    putStrLn $ err'
                     return Nothing
 
 doRender :: Scene -> String -> IO ()
@@ -66,10 +67,15 @@ doRender scn sceneName = do
     case mStarTree of
         Just startree -> do
             putStrLn "Star tree read. Rendering..."
+            time1 <- (round <$> getPOSIXTime) :: IO Int
             img <- computeP $ render scn startree
+            time2 <- round <$> getPOSIXTime
+            let secs = time2 - time1
+            putStrLn $ "Rendering completed in " ++ show (secs `div` 60)
+                ++ " min " ++ show (secs `rem` 60) ++ " sec."
 
             let outName = "output/" ++ sceneName ++ ".png"
-            putStrLn $ "Rendering completed. Saving to " ++ outName ++ "..."
+            putStrLn $ "Saving to " ++ outName ++ "..."
             doesDirectoryExist "output" >>= (`unless` createDirectory "output")
             overwriteImage outName img
 
