@@ -20,8 +20,6 @@ Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. Fir
 
 `llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build. This is the case at least on Windows.
 
-`friday` requires the `DevIL` library. On Arch Linux the package is called `devil`. You should be able to find the package in your distribution's repositories. Windows users can download `DevIL` [here](http://openil.sourceforge.net/download.php).
-
 Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the star tree that is used for rendering the celestial sphere. For convenience, I have included a prebuilt tree in binary form, but you can also build it yourself. The file is called `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
 
 ## Usage
@@ -45,7 +43,7 @@ If no scene name is passed, `blackstar` will render the `default` scene. The exa
 Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved).
 
 ## Implementation
-[`friday`](https://hackage.haskell.org/package/friday) was used for fast, parallel computation of the image.
+[`JuicyPixels`](http://hackage.haskell.org/package/JuicyPixels) and [`repa`](http://hackage.haskell.org/package/repa) were used for fast, parallel computation of the image.
 
 [`kdt`](https://hackage.haskell.org/package/kdt) was used for fast lookups into a star catalog. I had to customise the library just a tiny bit to be able to serialize and store the trees, so it's included in this repository.
 
@@ -68,7 +66,7 @@ As always, there's a plenty of room for improvement. For example:
 * Learn more about GHC and optimize the heck out of this
 * Better CLI
 * Better instructions for Windows
-* Faster Gaussian blur (a minor thing, perhaps `friday` will have this some day)
+* Faster Gaussian blur (a minor thing)
 * Better progress reporting (might be hard to do)
 * Kerr metric (won't probably happen)
 
