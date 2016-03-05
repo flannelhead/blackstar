@@ -47,7 +47,7 @@ The profile will be generated to `blackstar.prof`.
 ## Implementation
 [`JuicyPixels`](http://hackage.haskell.org/package/JuicyPixels) and [`repa`](http://hackage.haskell.org/package/repa) were used for fast, parallel computation of the image.
 
-[`kdt`](https://hackage.haskell.org/package/kdt) was used for fast lookups into a star catalog. I had to customise the library just a tiny bit to be able to serialize and store the trees, so it's included in this repository.
+[`kdt`](https://hackage.haskell.org/package/kdt) was used for fast lookups into a star catalog. I had to customise the library just a tiny bit to be able to serialize and store the trees, so currently `stack` will download and use [my fork of `kdt`](https://github.com/flannelhead/kdt).
 
 ## Things I've learnt
 * Using explicit `Double` datatypes instead of polymorphism via the `Floating` typeclass can make a huge difference in terms of speed

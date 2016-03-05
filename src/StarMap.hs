@@ -20,8 +20,9 @@ type Star = (V3 Double, (Int, Double, Double))
 type StarTree = KdMap Double (V3 Double) (Int, Double, Double)
 
 instance Serialize StarTree
+instance Serialize (TreeNode Double (V3 Double) (Int, Double, Double))
 
--- We can't serialize the functions but let's hack around it so that we can
+-- We can't serialize functions but let's hack around it so that we can
 -- serialize the KdMap anyway
 instance Serialize (SquaredDistanceFn Double (V3 Double)) where
     put _ = put (0 :: Word8)

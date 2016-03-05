@@ -6,10 +6,9 @@ resolver: lts-5.5
 # Local packages, usually specified by relative directory name
 packages:
 - '.'
-- kdt-0.2.3
-# - location:
-#     git: https://github.com/flannelhead/kdt.git
-#     commit: 31b27174064bb2d00b96a2a518ce665d48aa834e
+- location:
+    git: https://github.com/flannelhead/kdt.git
+    commit: 9fd77d6998646148e827067d2d5cd98c86b0a4c5
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: []
