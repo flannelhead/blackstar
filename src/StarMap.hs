@@ -119,7 +119,6 @@ starLookup !starmap !intensity !saturation !vel = let
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
         a = log 2 / (m0 - m1)
-        b = exp $ a * (m0 - m2)
         val = (* intensity) . min 1
               . exp $ a*(m2 - fromIntegral mag) - d2/(2*w*w)
     in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
