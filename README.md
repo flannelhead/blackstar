@@ -27,13 +27,9 @@ stack exec blackstar -- [-p|--preview] [scenename]
 ```
 Notice the two dashes (`--`) which are required to terminate `stack`'s argument list.
 
-Scenes are defined using YAML config files. Look in the `scenes` folder for examples. `blackstar` looks for scenes under the `scenes` folder, so you'll have to put your scenes there, too. The scene file name should be passed to `blackstar` without the `.yaml` ending.
+Scenes are defined using YAML config files. Look in the `scenes` folder for examples. `blackstar` looks for scenes under the `scenes` folder, so you'll have to put your scenes there, too. The scene file name should be passed to `blackstar` without the `.yaml` ending. If no scene name is passed, `blackstar` will render the `default` scene. The example image is exactly this scene.
 
-The rendered files go into the folder `output`, named `scenename.png` and `scenename-bloomed.png`.
-
-The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters.
-
-If no scene name is passed, `blackstar` will render the `default` scene. The example image is exactly this scene.
+The rendered files go into the folder `output`, named `scenename.png` and `scenename-bloomed.png`. The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters.
 
 Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved).
 

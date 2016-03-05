@@ -27,9 +27,10 @@ doStart sceneName preview = do
     let filename = "scenes/" ++ sceneName ++ ".yaml"
     putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
+    let sceneName' = if preview then sceneName ++ "-preview" else sceneName
     case cfg of
         Right scene -> putStrLn "Scene successfully read."
-                           >> doRender (prepareScene scene preview) sceneName
+                           >> doRender (prepareScene scene preview) sceneName'
         Left  err   -> putStrLn $ prettyPrintParseException err
 
 prepareScene :: Scene -> Bool -> Scene
