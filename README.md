@@ -18,19 +18,14 @@ It is a tribute to David Bowie, referring to his last album.
 ## Building
 Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
-`llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build. This is the case at least on Windows.
-
-Finally, the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) is required for generating the star tree that is used for rendering the celestial sphere. For convenience, I have included a prebuilt tree in binary form, but you can also build it yourself. The file is called `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
+This repository includes a star lookup tree (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt tree in binary form is included for convenience, but you can also build it yourself. First, remove `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
 
 ## Usage
-When `blackstar` has been built with `stack`, you can optionally install it to the runtime path by running `stack install`. Then you can run it with
-```
-blackstar [-p|--preview] scenename
-```
-If you don't want to install it, run this in the project's root folder:
+When `blackstar` has been built with `stack`, you can run it with
 ```
 stack exec blackstar -- [-p|--preview] [scenename]
 ```
+Notice the two dashes (`--`) which are required to terminate `stack`'s argument list.
 
 Scenes are defined using YAML config files. Look in the `scenes` folder for examples. `blackstar` looks for scenes under the `scenes` folder, so you'll have to put your scenes there, too. The scene file name should be passed to `blackstar` without the `.yaml` ending.
 
@@ -41,6 +36,17 @@ The `--preview` flag can be used to render small-sized previews of the scene whi
 If no scene name is passed, `blackstar` will render the `default` scene. The example image is exactly this scene.
 
 Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved).
+
+## Profiling
+Thanks to `stack`, profiling is incredibly easy. Rebuild `blackstar` by running
+```
+stack build --profile
+```
+and then run it with
+```
+stack exec blackstar -- +RTS -p
+```
+The profile will be generated to `blackstar.prof`.
 
 ## Implementation
 [`JuicyPixels`](http://hackage.haskell.org/package/JuicyPixels) and [`repa`](http://hackage.haskell.org/package/repa) were used for fast, parallel computation of the image.
