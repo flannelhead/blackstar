@@ -97,25 +97,30 @@ sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
 
 starLookup :: StarTree -> Double -> Double -> V3 Double -> RGBA
 starLookup !starmap !intensity !saturation !vel = let
-        r = 0.002  -- star sampling radius
         -- The magnitude value tells about the intensity of the star. The
-        -- brighter the star, the larger the magnitude. These constants are
-        -- used for adjusting the dynamics of the rendered celestial sphere
+        -- brighter the star, the smaller the magnitude. These constants are
+        -- used for adjusting the dynamics of the rendered celestial sphere.
+        -- We need three fixed points to determine the dynamics:
+        -- the points m0 and m1 fix the logarithmic scale. m0 is the reference
+        -- "minimum" magnitude. When the magnitude reaches m1, the brightness
+        -- will be doubled. m2 is required for normalization and corresponds to
+        -- the maximal brightness value that will be represented on the screen.
         m0 = 1350 :: Double  -- the "minimum visible" magnitude
-        m1 = 930 :: Double  -- the "saturated" magnitude
+        m1 = 1300 :: Double  -- the "double brightness" magnitude
+        m2 = 950 :: Double  -- the "maximum brightness" magnitude
         w = 0.0005  -- width parameter of the gaussian function
+        r = 0.002  -- star sampling radius
+
         nvel = normalize vel
         d2 = sqrnorm $ pos ^-^ nvel  -- the distance from the star on the
                                      -- celestial sphere surface
-        -- The number 255 originates from the original algorithm with Word8
-        -- pixels but was left in because it seems to nicely contribute to the
-        -- rendering of the stars. It kind of determines the dynamic range.
-        a = log 255 / (m0 - m1)
         (pos, (mag, hue, sat)) = nearest starmap nvel
         -- Conversion from the log magnitude scale to linear brightness
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
-        val = min intensity . (* (intensity / 255))
-            . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
+        a = log 2 / (m0 - m1)
+        b = exp $ a * (m0 - m2)
+        val = (* intensity) . min 1
+              . exp $ a*(m2 - fromIntegral mag) - d2/(2*w*w)
     in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
                    else (0, 0, 0, 1)

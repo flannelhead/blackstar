@@ -31,9 +31,9 @@ render :: Scene -> StarTree -> RGBImageDelayed
 render !scn !startree = R.fromFunction (ix2 h w) (traceRay scn' startree)
     where cam = camera scn
           (w, h) = resolution cam
-          scn' = scn { safeDistance = max (50**2) (2 * (sqrnorm $ position cam))
-                     , diskInner = (diskInner scn)**2
-                     , diskOuter = (diskOuter scn)**2
+          scn' = scn { safeDistance = max (50^2) (2 * (sqrnorm $ position cam))
+                     , diskInner = (diskInner scn)^2
+                     , diskOuter = (diskOuter scn)^2
                      , diskColor = hsvToRGB $ diskColor scn }
 
 traceRay :: Scene -> StarTree -> DIM2 -> RGB
@@ -71,7 +71,7 @@ diskColor' :: Scene -> Double -> Double -> RGBA
 diskColor' !scn !r _ = let
         inner = sqrt (diskInner scn)
         dr = sqrt (diskOuter scn) - inner
-        alpha = sin (pi*(1 - (r-inner)/dr)^(2 :: Int))
+        alpha = sin (pi*(1 - (r-inner)/dr)^2)
     in addAlpha (diskColor scn) (alpha * diskOpacity scn)
 
 rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
