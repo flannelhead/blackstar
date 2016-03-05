@@ -75,16 +75,12 @@ readSafe path = do
 readMapFromFile :: FilePath -> IO (Either String [Star])
 readMapFromFile path = do
     ebs <- readSafe path
-    case ebs of
-        Right bs -> return $ runGet readMap bs
-        Left err -> return $ Left err
+    return $ ebs >>= runGet readMap
 
 readTreeFromFile :: FilePath -> IO (Either String StarTree)
 readTreeFromFile path = do
     ebs <- readSafe path
-    case ebs of
-        Right bs -> return $ decode bs
-        Left err -> return $ Left err
+    return $ ebs >>= decode
 
 writeTreeToFile :: FilePath -> StarTree -> IO ()
 writeTreeToFile path tree = B.writeFile path $ encode tree
