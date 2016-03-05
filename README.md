@@ -16,7 +16,7 @@ A black hole ray tracer written in Haskell.
 It is a tribute to David Bowie, referring to his last album.
 
 ## Building
-Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`.
+Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
 `llvm` is also required. I installed the package `llvm35` on Arch Linux. If you can't install `llvm`, remove all occurrences of `-fllvm` from `blackstar.cabal` to be able to build. This is the case at least on Windows.
 
@@ -65,8 +65,7 @@ As always, there's a plenty of room for improvement. For example:
 * Write a blog post about this!
 * Learn more about GHC and optimize the heck out of this
 * Better CLI
-* Better instructions for Windows
-* Faster Gaussian blur (a minor thing)
+* Faster Gaussian blur (a minor thing but become restrictive on larger renders)
 * Better progress reporting (might be hard to do)
 * Kerr metric (won't probably happen)
 
