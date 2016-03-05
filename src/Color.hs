@@ -93,10 +93,6 @@ gaussianBlur !rad !src = let
           in (exp (-(r'*r') / (2*sigma*sigma)) / (sqrt(2*pi)*sigma), r)
         | r <- [ -rad .. rad ] ]
 
-    norms :: U.Vector Double
-    norms = U.fromList [ 1 / (U.sum . U.take len . U.map fst $ kernel)
-                       | len <- [ 1 .. 2*rad+1 ] ]
-
     kernH, kernV :: DIM2 -> U.Vector (Double, Int, Int)
     kernH !(Z :. y :. x) = U.filter (\(_, _, x') -> x' >= 0 && x' < w)
         $ U.map (\(a, dx) -> (a, y, x+dx)) kernel
@@ -105,10 +101,7 @@ gaussianBlur !rad !src = let
 
     convolve :: RGBImage -> (DIM2 -> U.Vector (Double, Int, Int))
                 -> DIM2 -> RGB
-    convolve img !kern !ix = let
-        !k = kern ix
-        !n = norms U.! (U.length k - 1)
-        in mul n $ U.foldl' (acc img) (0, 0, 0) k
+    convolve img !kern !ix = U.foldl' (acc img) (0, 0, 0) $ kern ix
 
     acc :: RGBImage -> RGB -> (Double, Int, Int) -> RGB
     acc !img !pxl (!weight, !y, !x) = add pxl

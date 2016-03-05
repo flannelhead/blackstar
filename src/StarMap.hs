@@ -113,12 +113,12 @@ starLookup !starmap !intensity !saturation !vel = let
         -- The number 255 originates from the original algorithm with Word8
         -- pixels but was left in because it seems to nicely contribute to the
         -- rendering of the stars. It kind of determines the dynamic range.
-        a = log (255 * intensity) / (m0 - m1)
+        a = log 255 / (m0 - m1)
         (pos, (mag, hue, sat)) = nearest starmap nvel
         -- Conversion from the log magnitude scale to linear brightness
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
-        val = min intensity . (/ 255)
+        val = min intensity . (* (intensity / 255))
             . exp $ a*(m0 - fromIntegral mag) - d2/(2*w**2)
     in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
                    else (0, 0, 0, 1)
