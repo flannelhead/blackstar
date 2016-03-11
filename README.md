@@ -64,11 +64,9 @@ This project was started when I was taking a general relativity course. On the c
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Write a blog post about this!
+* Implement supersampling
 * Learn more about GHC and optimize the heck out of this
-* Better CLI
-* Faster Gaussian blur (a minor thing but become restrictive on larger renders)
+* Faster Gaussian blur (a minor thing but become restrictive on larger image sizes)
 * Better progress reporting (might be hard to do)
-* Kerr metric (won't probably happen)
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
