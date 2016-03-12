@@ -1,0 +1,11 @@
+camera:
+    position:   [20, 0, 0]
+    lookAt:     [0, 0, 3.5]
+    upVec:      [0, 1, 0]
+    fov:        2
+    resolution: [3840, 2160]
+
+bloomStrength: 0.3
+starIntensity: 0.7
+starSaturation: 0.7
+diskOpacity: 0
