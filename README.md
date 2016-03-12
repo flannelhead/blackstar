@@ -52,7 +52,7 @@ The profile will be generated to `blackstar.prof`.
 ## Things I've learnt
 * Using explicit `Double` datatypes instead of polymorphism via the `Floating` typeclass can make a huge difference in terms of speed
 * Automatic differentiation is a *really* elegant idea but comes with an overhead
-* How to spell Schwarzchild correctly
+* How to spell Schwarzschild correctly
 
 ## Inspiration
 This project was heavily inspired by [this excellent article](http://rantonels.github.io/starless/) and the [Python code](http://github.com/rantonels/starless) by [rantonels](https://github.com/rantonels). Without him, this project would never have born. You'll most certainly notice some similarities but also differences.
