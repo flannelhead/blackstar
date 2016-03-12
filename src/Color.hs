@@ -6,7 +6,7 @@ module Color
     , HSV
     , RGBImage
     , RGBImageDelayed
-    , savePNG
+    , pngByteString
     , addAlpha
     , dropAlpha
     , blend
@@ -42,8 +42,8 @@ rgbImageToImage img = let
                     . R.computeUnboxedS $ R.interleave3 r g b }
     in ImageRGB8 res
 
-savePNG :: RGBImage -> FilePath -> IO ()
-savePNG img path = B.writeFile path . imageToPng $ rgbImageToImage img
+pngByteString :: RGBImage -> B.ByteString
+pngByteString img = imageToPng $ rgbImageToImage img
 
 hsvToRGB :: HSV -> RGB
 hsvToRGB (!h, !s, !v) = let

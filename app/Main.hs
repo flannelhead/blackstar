@@ -2,6 +2,8 @@ module Main where
 
 import System.Environment (getArgs)
 import System.Directory
+import System.IO
+import qualified Data.ByteString.Lazy as B
 import Control.Monad
 import qualified Data.Array.Repa as R
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
@@ -53,7 +55,8 @@ readStarTree = do
             case eitherMap of
                 Right stars -> do
                     let tree' = buildStarTree stars
-                    writeTreeToFile treePath tree'
+                    promptOverwriteFile treePath . B.fromStrict
+                        $ treeToByteString tree'
                     putStrLn $ "Tree saved to " ++ treePath ++ "."
                     return $ Just tree'
                 Left  err'  -> do
@@ -77,20 +80,25 @@ doRender scn sceneName = do
             let outName = "output/" ++ sceneName ++ ".png"
             putStrLn $ "Saving to " ++ outName ++ "..."
             doesDirectoryExist "output" >>= (`unless` createDirectory "output")
-            overwriteImage outName img
+            promptOverwriteFile outName $ pngByteString img
 
             when (bloomStrength scn /= 0) $ do
                 putStrLn "Applying bloom..."
                 bloomed <- bloom (bloomStrength scn) img
                 let bloomName = "output/" ++ sceneName ++ "-bloomed.png"
                 putStrLn $ "Saving to " ++ bloomName ++ "..."
-                overwriteImage bloomName bloomed
+                promptOverwriteFile bloomName $ pngByteString bloomed
 
             putStrLn "Everything done. Thank you!"
         _ -> putStrLn "Couldn't load the star tree."
 
-overwriteImage :: FilePath -> RGBImage -> IO ()
-overwriteImage path img = do
-    doesFileExist path >>= (`when` removeFile path)
-    _ <- savePNG img path
-    return ()
+promptOverwriteFile :: FilePath -> B.ByteString -> IO ()
+promptOverwriteFile path bs = do
+    doesExist <- doesFileExist path
+    if doesExist then do
+        putStr $ "Overwrite " ++ path ++ "? [y/N] "
+        hFlush stdout
+        answer <- getLine
+        if answer == "y" || answer == "Y" then B.writeFile path bs
+                                          else putStrLn "Nothing was written."
+                 else B.writeFile path bs

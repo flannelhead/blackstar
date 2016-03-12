@@ -2,7 +2,7 @@
              FlexibleInstances #-}
 
 module StarMap
-    ( Star, StarTree, readMapFromFile, readTreeFromFile, writeTreeToFile
+    ( Star, StarTree, readMapFromFile, readTreeFromFile, treeToByteString
     , buildStarTree, sqrnorm, starLookup ) where
 
 import System.Directory
@@ -83,8 +83,8 @@ readTreeFromFile path = do
     ebs <- readSafe path
     return $ ebs >>= decode
 
-writeTreeToFile :: FilePath -> StarTree -> IO ()
-writeTreeToFile path tree = B.writeFile path $ encode tree
+treeToByteString :: StarTree -> B.ByteString
+treeToByteString tree = encode tree
 
 buildStarTree :: [Star] -> StarTree
 buildStarTree stars = build v3AsList stars
