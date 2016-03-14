@@ -1,5 +1,4 @@
-{-# LANGUAGE BangPatterns, DeriveGeneric, TypeSynonymInstances,
-             FlexibleInstances #-}
+{-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
 module StarMap
     ( Star, StarTree, readMapFromFile, readTreeFromFile, treeToByteString
@@ -46,8 +45,8 @@ readMap = do
         skip 1
         mag <- getInt16be
         skip 8
-        return $ (raDecToCartesian ra dec, starColor' (fromIntegral mag)
-                 . chr $ fromIntegral spectral)
+        return (raDecToCartesian ra dec, starColor' (fromIntegral mag)
+                . chr $ fromIntegral spectral)
 
 starColor' :: Int -> Char -> (Int, Double, Double)
 starColor' !mag !ch = let (!h, !s) = starColor ch in (mag, h, s)
@@ -69,7 +68,7 @@ raDecToCartesian ra dec = V3 (cos dec*cos ra) (cos dec*sin ra) (sin dec)
 readSafe :: FilePath -> IO (Either String B.ByteString)
 readSafe path = do
     exists <- doesFileExist path
-    if exists then fmap Right $ B.readFile path
+    if exists then Right <$> B.readFile path
               else return . Left $ "Error: file " ++ path
                   ++ " doesn't exist.\n"
 
@@ -84,10 +83,10 @@ readTreeFromFile path = do
     return $ ebs >>= decode
 
 treeToByteString :: StarTree -> B.ByteString
-treeToByteString tree = encode tree
+treeToByteString = encode
 
 buildStarTree :: [Star] -> StarTree
-buildStarTree stars = build v3AsList stars
+buildStarTree = build v3AsList
 
 v3AsList :: V3 Double -> [Double]
 v3AsList (V3 !x !y !z) = [x, y, z]
@@ -120,6 +119,6 @@ starLookup !starmap !intensity !saturation !vel = let
         -- and brightness of the star.
         a = log 2 / (m0 - m1)
         val = (* intensity) . min 1
-              . exp $ a*(m2 - fromIntegral mag) - d2/(2*w*w)
+              . exp $ a*(m2 - fromIntegral mag) - d2/(2*w^2)
     in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
                    else (0, 0, 0, 1)

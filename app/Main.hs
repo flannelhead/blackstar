@@ -60,7 +60,7 @@ readStarTree = do
                     putStrLn $ "Tree saved to " ++ treePath ++ "."
                     return $ Just tree'
                 Left  err'  -> do
-                    putStrLn $ err'
+                    putStrLn err'
                     return Nothing
 
 doRender :: Scene -> String -> IO ()

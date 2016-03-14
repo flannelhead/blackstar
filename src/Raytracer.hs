@@ -16,24 +16,24 @@ data Layer = Layer !RGBA | Bottom !RGBA | None
 
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Scene -> DIM2 -> (V3 Double, V3 Double)
-generateRay !scn !(Z :. y' :. x') = (vel, pos)
+generateRay !scn (Z :. y' :. x') = (vel, pos)
     where cam = camera scn
           pos = position cam
           w = fromIntegral . fst $ resolution cam
           h = fromIntegral . snd $ resolution cam
           matr = L.lookAt pos (lookAt cam) (upVec cam) ^. _m33
           vel  = normalize . (transpose matr !*)
-                 $ V3 (fov cam * ((fromIntegral x') / w - 0.5))
-                      (fov cam * (0.5 - (fromIntegral y') / h) * h/w)
+                 $ V3 (fov cam * (fromIntegral x' / w - 0.5))
+                      (fov cam * (0.5 - fromIntegral y' / h) * h/w)
                       (-1)
 
 render :: Scene -> StarTree -> RGBImageDelayed
 render !scn !startree = R.fromFunction (ix2 h w) (traceRay scn' startree)
     where cam = camera scn
           (w, h) = resolution cam
-          scn' = scn { safeDistance = max (50^2) (2 * (sqrnorm $ position cam))
-                     , diskInner = (diskInner scn)^2
-                     , diskOuter = (diskOuter scn)^2
+          scn' = scn { safeDistance = max (50^2) (2 * sqrnorm (position cam))
+                     , diskInner = diskInner scn ^ 2
+                     , diskOuter = diskOuter scn ^ 2
                      , diskColor = hsvToRGB $ diskColor scn }
 
 traceRay :: Scene -> StarTree -> DIM2 -> RGB
@@ -55,7 +55,7 @@ colorize !scn !startree !next !crd = let newCrd = next crd in
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
 findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
-    | r2 < 1 = Bottom $ (0, 0, 0, 1)  -- already passed the event horizon
+    | r2 < 1 = Bottom (0, 0, 0, 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
     | diskOpacity scn /= 0 && (signum y' /= signum y)
@@ -87,4 +87,4 @@ rk4 !h !f !y = y `add`
           add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
 
 fgeodesic :: Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-fgeodesic h2 (!vel, !pos) = (-1.5*h2 / ((sqrnorm pos)**2.5) *^ pos, vel)
+fgeodesic h2 (!vel, !pos) = (-1.5*h2 / (sqrnorm pos ** 2.5) *^ pos, vel)
