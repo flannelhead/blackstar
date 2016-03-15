@@ -62,12 +62,14 @@ hsvToRGB (!h, !s, !v) = let
     in (r + m, g + m, b + m)
 
 addAlpha :: RGB -> Double -> RGBA
+{-# INLINE addAlpha #-}
 addAlpha (!r, !g, !b) !a = (r, g, b, a)
 
 dropAlpha :: RGBA -> RGB
 dropAlpha (!r, !g, !b, _) = (r, g, b)
 
 blend :: RGBA -> RGBA -> RGBA
+{-# INLINE blend #-}
 blend (!tr, !tg, !tb, !ta) (!br, !bg, !bb, !ba) = let
         a = ta + ba * (1 - ta)
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a

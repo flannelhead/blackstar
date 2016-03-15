@@ -12,22 +12,22 @@ import Linear
 
 import Color (RGB)
 
-data Scene = Scene { safeDistance :: Double
-                   , stepSize :: Double
-                   , camera :: Camera
-                   , bloomStrength :: Double
-                   , starIntensity :: Double
-                   , starSaturation :: Double
-                   , diskColor :: RGB
-                   , diskOpacity :: Double
-                   , diskInner :: Double
-                   , diskOuter :: Double }
+data Scene = Scene { safeDistance :: !Double
+                   , stepSize :: !Double
+                   , camera :: !Camera
+                   , bloomStrength :: !Double
+                   , starIntensity :: !Double
+                   , starSaturation :: !Double
+                   , diskColor :: !RGB
+                   , diskOpacity :: !Double
+                   , diskInner :: !Double
+                   , diskOuter :: !Double }
 
-data Camera = Camera { position :: V3 Double
-                     , lookAt :: V3 Double
-                     , upVec :: V3 Double
-                     , fov :: Double
-                     , resolution :: (Int, Int) }
+data Camera = Camera { position :: !(V3 Double)
+                     , lookAt :: !(V3 Double)
+                     , upVec :: !(V3 Double)
+                     , fov :: !Double
+                     , resolution :: !(Int, Int) }
 
 instance FromJSON (V3 Double) where
     parseJSON vec = do

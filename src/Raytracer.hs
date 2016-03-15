@@ -54,6 +54,7 @@ colorize !scn !startree !next !crd = let newCrd = next crd in
 
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
+{-# INLINE findColor #-}
 findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
     | r2 < 1 = Bottom (0, 0, 0, 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
@@ -68,6 +69,7 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
           phiave = (y'*atan2 z x - y*atan2 z' x') / (y' - y)
 
 diskColor' :: Scene -> Double -> Double -> RGBA
+{-# INLINE diskColor' #-}
 diskColor' !scn !r _ = let
         inner = sqrt (diskInner scn)
         dr = sqrt (diskOuter scn) - inner
@@ -83,8 +85,11 @@ rk4 !h !f !y = y `add`
           k3 = f (y `add` (k2 `mul` (h/2)))
           k4 = f (y `add` (k3 `mul` h))
 
+          {-# INLINE mul #-}
           mul (!u, !v) !a = (u ^* a, v ^* a)
+          {-# INLINE add #-}
           add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
 
 fgeodesic :: Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
+{-# INLINE fgeodesic #-}
 fgeodesic h2 (!vel, !pos) = (-1.5*h2 / (sqrnorm pos ** 2.5) *^ pos, vel)
