@@ -92,4 +92,4 @@ rk4 !h !f !y = y `add`
 
 fgeodesic :: Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
 {-# INLINE fgeodesic #-}
-fgeodesic h2 (!vel, !pos) = (-1.5*h2 / (sqrnorm pos ** 2.5) *^ pos, vel)
+fgeodesic h2 (!vel, !pos) = (-1.5*h2 / (norm pos ^ 5) *^ pos, vel)
