@@ -39,7 +39,8 @@ prepareScene :: Scene -> Bool -> Scene
 prepareScene scn preview = let
     cam = camera scn
     (w, h) = resolution cam
-    newRes = if w >= h then (300, 300 * h `div` w) else (300 * w `div` h, 300)
+    res = 300
+    newRes = if w >= h then (res, res * h `div` w) else (res * w `div` h, res)
     in if preview then scn { camera = cam { resolution = newRes } } else scn
 
 readStarTree :: IO (Maybe StarTree)
