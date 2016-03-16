@@ -2,6 +2,7 @@
 
 module Raytracer (render) where
 
+import Data.List (foldl1')
 import qualified Data.Array.Repa as R
 import Data.Array.Repa.Index
 import Linear hiding (lookAt, mult, trace)
@@ -40,17 +41,20 @@ traceRay :: Scene -> StarTree -> DIM2 -> RGB
 traceRay !scn !startree !pt = let
         ray@(vel, pos) = generateRay scn pt
         h2 = sqrnorm $ pos `cross` vel
-    in dropAlpha
-       . colorize scn startree (rk4 (stepSize scn) (fgeodesic h2)) $ ray
+    in dropAlpha . blendLayers
+       . colorLayers scn startree (rk4 (stepSize scn) h2) $ ray
 
-colorize :: Scene -> StarTree
+blendLayers :: [RGBA] -> RGBA
+blendLayers !rgbas = foldl1' blend rgbas
+
+colorLayers :: Scene -> StarTree
             -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
-            -> (V3 Double, V3 Double) -> RGBA
-colorize !scn !startree !next !crd = let newCrd = next crd in
+            -> (V3 Double, V3 Double) -> [RGBA]
+colorLayers !scn !startree !next !crd = let newCrd = next crd in
     case findColor scn startree crd newCrd of
-        Layer rgba -> blend rgba $ colorize scn startree next newCrd
-        Bottom rgba -> rgba
-        None -> colorize scn startree next newCrd
+        Layer rgba -> rgba : colorLayers scn startree next newCrd
+        Bottom rgba -> [rgba]
+        None -> colorLayers scn startree next newCrd
 
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
@@ -76,9 +80,9 @@ diskColor' !scn !r _ = let
         alpha = sin (pi*(1 - (r-inner)/dr)^2)
     in addAlpha (diskColor scn) (alpha * diskOpacity scn)
 
-rk4 :: Double -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
-       -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-rk4 !h !f !y = y `add`
+rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
+{-# INLINE rk4 #-}
+rk4 !h !h2 !y = y `add`
     ((k1 `add` (k2 `mul` 2) `add` (k3 `mul` 2) `add` k4) `mul` (h/6))
     where k1 = f y
           k2 = f (y `add` (k1 `mul` (h/2)))
@@ -89,7 +93,5 @@ rk4 !h !f !y = y `add`
           mul (!u, !v) !a = (u ^* a, v ^* a)
           {-# INLINE add #-}
           add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
-
-fgeodesic :: Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
-{-# INLINE fgeodesic #-}
-fgeodesic h2 (!vel, !pos) = (-1.5*h2 / (norm pos ^ 5) *^ pos, vel)
+          {-# INLINE f #-}
+          f (!vel, !pos) = (-1.5*h2 / (norm pos ^ 5) *^ pos, vel)

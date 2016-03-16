@@ -45,16 +45,16 @@ instance FromJSON Camera where
     parseJSON invalid = typeMismatch "Camera" invalid
 
 instance FromJSON Scene where
-    parseJSON (Object v) = Scene 0                         <$>
-                           v .:? "stepSize"       .!= 0.15 <*>
-                           v .:  "camera"                  <*>
-                           v .:? "bloomStrength"  .!= 0.4  <*>
-                           v .:? "starIntensity"  .!= 0.7  <*>
-                           v .:? "starSaturation" .!= 0.7  <*>
+    parseJSON (Object v) = Scene 0                        <$>
+                           v .:? "stepSize"       .!= 0.3 <*>
+                           v .:  "camera"                 <*>
+                           v .:? "bloomStrength"  .!= 0.4 <*>
+                           v .:? "starIntensity"  .!= 0.7 <*>
+                           v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskHSV"
-                             .!= (60, 0.1, 0.95)           <*>
-                           v .:? "diskOpacity"    .!= 0    <*>
-                           v .:? "diskInner"      .!= 3    <*>
+                             .!= (60, 0.1, 0.95)          <*>
+                           v .:? "diskOpacity"    .!= 0   <*>
+                           v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12
 
     parseJSON invalid = typeMismatch "Object" invalid
