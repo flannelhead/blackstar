@@ -2,13 +2,11 @@
 
 module Raytracer (render) where
 
-import Data.List (foldl1')
 import qualified Data.Array.Repa as R
 import Data.Array.Repa.Index
 import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
 import Control.Lens
-
 import StarMap
 import Color
 import ConfigFile
@@ -41,20 +39,16 @@ traceRay :: Scene -> StarTree -> DIM2 -> RGB
 traceRay !scn !startree !pt = let
         ray@(vel, pos) = generateRay scn pt
         h2 = sqrnorm $ pos `cross` vel
-    in dropAlpha . blendLayers
-       . colorLayers scn startree (rk4 (stepSize scn) h2) $ ray
+    in dropAlpha . colorize scn startree (rk4 (stepSize scn) h2) $ ray
 
-blendLayers :: [RGBA] -> RGBA
-blendLayers !rgbas = foldl1' blend rgbas
-
-colorLayers :: Scene -> StarTree
-            -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
-            -> (V3 Double, V3 Double) -> [RGBA]
-colorLayers !scn !startree !next !crd = let newCrd = next crd in
+colorize :: Scene -> StarTree
+         -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
+         -> (V3 Double, V3 Double) -> RGBA
+colorize !scn !startree !next !crd = let newCrd = next crd in
     case findColor scn startree crd newCrd of
-        Layer rgba -> rgba : colorLayers scn startree next newCrd
-        Bottom rgba -> [rgba]
-        None -> colorLayers scn startree next newCrd
+        Layer rgba -> blend rgba $ colorize scn startree next newCrd
+        Bottom rgba -> rgba
+        None -> colorize scn startree next newCrd
 
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
