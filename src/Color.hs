@@ -11,7 +11,6 @@ module Color
     , dropAlpha
     , blend
     , bloom
-    , gaussianBlur
     , hsvToRGB ) where
 
 import qualified Data.Vector.Unboxed as U
@@ -75,46 +74,46 @@ blend (!tr, !tg, !tb, !ta) (!br, !bg, !bb, !ba) = let
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
     in (comp tr br, comp tg bg, comp tb bb, a)
 
-add :: RGB -> RGB -> RGB
-add (!r, !g, !b) (!r', !g', !b') = (r+r', g+g', b+b')
-
-mul :: Double -> RGB -> RGB
-mul !a (!r, !g, !b) = (a*r, a*g, a*b)
-
--- A somewhat fast Gaussian blur implementation using a separable kernel.
--- This is pretty sketchy and maybe not entirely correct. friday's Gaussian
--- blur filter doesn't currently support RGB images.
-gaussianBlur :: Monad m => Int -> RGBImage -> m RGBImage
-gaussianBlur !rad !src = let
+-- Apply Gaussian blur and add it to the image weighted by a constant
+doBloom :: Monad m => Int -> Double -> RGBImage -> m RGBImage
+doBloom !rad !bloomStrength !src = let
     sh@(Z :. h :. w) = R.extent src
 
     kernel :: U.Vector (Double, Int)
     kernel = U.fromList
         [ let r' = fromIntegral r
               sigma = (fromIntegral rad / 3)
-          in (exp (-(r'*r') / (2*sigma*sigma)) / (sqrt(2*pi)*sigma), r)
+              a = sqrt bloomStrength
+          in (a * exp (-(r'*r') / (2*sigma*sigma)) / (sqrt(2*pi)*sigma), r)
         | r <- [ -rad .. rad ] ]
 
-    kernH, kernV :: DIM2 -> U.Vector (Double, Int, Int)
-    kernH (Z :. y :. x) = U.filter (\(_, _, x') -> x' >= 0 && x' < w)
-        $ U.map (\(a, dx) -> (a, y, x+dx)) kernel
-    kernV (Z :. y :. x) = U.filter (\(_, y', _) -> y' >= 0 && y' < h)
-        $ U.map (\(a, dy) -> (a, y+dy, x)) kernel
+    convolve !acc !img !ix = U.foldl' (acc img ix) 0 kernel
+    accH !img (Z :. y :. x) !pxl (!weight, !r)
+        | x' < 0 || x' >= w = pxl
+        | otherwise = pxl + weight * (img `R.unsafeIndex` ix2 y x')
+        where x' = x + r
+    accV !img (Z :. y :. x) !pxl (!weight, !r)
+        | y' < 0 || y' >= w = pxl
+        | otherwise = pxl + weight * (img `R.unsafeIndex` ix2 y' x)
+        where y' = y + r
 
-    convolve :: RGBImage -> (DIM2 -> U.Vector (Double, Int, Int))
-                -> DIM2 -> RGB
-    convolve img !kern !ix = U.foldl' (acc img) (0, 0, 0) $ kern ix
+    convolveH, convolveV, process :: Monad m => R.Array R.U DIM2 Double
+                                  -> m (R.Array R.U DIM2 Double)
+    convolveH img = R.computeUnboxedP $ R.fromFunction sh (convolve accH img)
+    convolveV img = R.computeUnboxedP $ R.fromFunction sh (convolve accV img)
+    process img = do
+        img' <- convolveH img
+        img'' <- convolveV img'
+        R.computeUnboxedP $ R.fromFunction sh (\ix -> img `R.unsafeIndex` ix
+                                                    + img'' `R.unsafeIndex` ix)
 
-    acc :: RGBImage -> RGB -> (Double, Int, Int) -> RGB
-    acc !img !pxl (!weight, !y, !x) = add pxl
-        $ weight `mul` (img R.! ix2 y x)
-    in do tmp <- R.computeUnboxedP $ R.fromFunction sh (convolve src kernH)
-          R.computeUnboxedP $ R.fromFunction sh (convolve tmp kernV)
+    (r, g, b) = RU.unzip3 src
+    in do r' <- process r
+          g' <- process g
+          b' <- process b
+          return $ RU.zip3 r' g' b'
 
--- Apply Gaussian blur and add it to the image weighted by a constant
 bloom :: Monad m => Double -> RGBImage -> m RGBImage
 bloom strength src = do
     let sh@(Z :. _ :. w) = R.extent src
-    tmp <- gaussianBlur (w `div` 20) src
-    R.computeUnboxedP $ R.fromFunction sh
-        (\ix -> (src R.! ix) `add` (strength `mul` (tmp R.! ix)))
+    doBloom (w `div` 20) strength src
