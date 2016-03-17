@@ -64,6 +64,16 @@ readStarTree = do
                     putStrLn err'
                     return Nothing
 
+timeAction :: String -> IO a -> IO a
+timeAction name action = do
+    time1 <- (round <$> getPOSIXTime) :: IO Int
+    res <- action
+    time2 <- round <$> getPOSIXTime
+    let secs = time2 - time1
+    putStrLn $ name ++ " completed in " ++ show (secs `div` 60)
+        ++ " min " ++ show (secs `rem` 60) ++ " sec."
+    return res
+
 doRender :: Scene -> String -> IO ()
 doRender scn sceneName = do
     putStrLn "Reading the star tree..."
@@ -71,12 +81,8 @@ doRender scn sceneName = do
     case mStarTree of
         Just startree -> do
             putStrLn "Star tree read. Rendering..."
-            time1 <- (round <$> getPOSIXTime) :: IO Int
-            img <- R.computeUnboxedP $ render scn startree
-            time2 <- round <$> getPOSIXTime
-            let secs = time2 - time1
-            putStrLn $ "Rendering completed in " ++ show (secs `div` 60)
-                ++ " min " ++ show (secs `rem` 60) ++ " sec."
+            img <- timeAction "Rendering"
+                $ R.computeUnboxedP (render scn startree)
 
             let outName = "output/" ++ sceneName ++ ".png"
             putStrLn $ "Saving to " ++ outName ++ "..."
@@ -85,7 +91,7 @@ doRender scn sceneName = do
 
             when (bloomStrength scn /= 0) $ do
                 putStrLn "Applying bloom..."
-                bloomed <- bloom (bloomStrength scn) img
+                bloomed <- timeAction "Bloom" $ bloom (bloomStrength scn) img
                 let bloomName = "output/" ++ sceneName ++ "-bloomed.png"
                 putStrLn $ "Saving to " ++ bloomName ++ "..."
                 promptOverwriteFile bloomName $ pngByteString bloomed
