@@ -31,7 +31,6 @@ library
                      , aeson
                      , directory
                      , repa
-                     , repa-algorithms
                      , JuicyPixels
   default-language:    Haskell2010
 
