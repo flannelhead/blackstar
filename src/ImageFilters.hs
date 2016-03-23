@@ -1,6 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
 
-module ImageFilters (bloom) where
+module ImageFilters (bloom, supersample) where
 
 import qualified Data.Array.Repa as R
 import Data.Array.Repa.Index
@@ -69,9 +69,21 @@ boxBlur !r !passes !img = let
         return $ R.fromUnboxed sh out
 
 bloom :: Monad m => Double -> Int -> RGBImage -> m RGBImage
-bloom strength divider img = do
-    let sh@(Z :. h :. w) = R.extent img
-    let blurred = boxBlur (w `div` divider) 3 img
-    R.computeUnboxedP . R.fromFunction sh
-        $ \ix -> img `R.unsafeIndex` ix `addRGB`
-                 mulRGB strength (blurred `R.unsafeIndex` ix)
+bloom strength divider img = let
+    sh@(Z :. h :. w) = R.extent img
+    blurred = boxBlur (w `div` divider) 3 img
+    {-# INLINE f #-}
+    f !ix = img `R.unsafeIndex` ix `addRGB`
+            mulRGB strength (blurred `R.unsafeIndex` ix)
+    in R.computeUnboxedP $ R.fromFunction sh f
+
+supersample :: RGBImageDelayed -> RGBImageDelayed
+supersample img = let
+    Z :. h :. w = R.extent img
+    {-# INLINE pix #-}
+    pix y x = img `R.unsafeIndex` ix2 y x
+    {-# INLINE f #-}
+    f (Z :. y :. x) = mulRGB 0.25
+        $ pix (2*y) (2*x) `addRGB` pix (2*y+1) (2*x) `addRGB` pix (2*y) (2*x+1)
+                          `addRGB` pix (2*y+1) (2*x+1)
+    in R.fromFunction (ix2 (h `div` 2) (w `div` 2)) f

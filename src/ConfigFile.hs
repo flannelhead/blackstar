@@ -2,7 +2,7 @@
 
 module ConfigFile
     ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength, bloomDivider
-           , starIntensity, starSaturation
+           , starIntensity, starSaturation, supersampling
            , diskColor, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
@@ -22,7 +22,8 @@ data Scene = Scene { safeDistance :: !Double
                    , diskColor :: !RGB
                    , diskOpacity :: !Double
                    , diskInner :: !Double
-                   , diskOuter :: !Double }
+                   , diskOuter :: !Double
+                   , supersampling :: !Bool }
 
 data Camera = Camera { position :: !(V3 Double)
                      , lookAt :: !(V3 Double)
@@ -57,6 +58,7 @@ instance FromJSON Scene where
                              .!= (60, 0.1, 0.95)          <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
-                           v .:? "diskOuter"      .!= 12
+                           v .:? "diskOuter"      .!= 12  <*>
+                           v .:? "supersampling"  .!= False
 
     parseJSON invalid = typeMismatch "Object" invalid

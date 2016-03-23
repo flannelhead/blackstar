@@ -7,9 +7,11 @@ import Data.Array.Repa.Index
 import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
 import Control.Lens
+
 import StarMap
 import Color
 import ConfigFile
+import ImageFilters
 
 data Layer = Layer !RGBA | Bottom !RGBA | None
 
@@ -27,13 +29,16 @@ generateRay !scn (Z :. y' :. x') = (vel, pos)
                       (-1)
 
 render :: Scene -> StarTree -> RGBImageDelayed
-render !scn !startree = R.fromFunction (ix2 h w) (traceRay scn' startree)
-    where cam = camera scn
+render !scn !startree = if supersampling scn then supersample img else img
+    where img = R.fromFunction (ix2 h' w') (traceRay scn' startree)
+          cam = camera scn
           (w, h) = resolution cam
+          res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
           scn' = scn { safeDistance = max (50^2) (2 * sqrnorm (position cam))
                      , diskInner = diskInner scn ^ 2
                      , diskOuter = diskOuter scn ^ 2
-                     , diskColor = hsvToRGB $ diskColor scn }
+                     , diskColor = hsvToRGB $ diskColor scn
+                     , camera = cam { resolution = res } }
 
 traceRay :: Scene -> StarTree -> DIM2 -> RGB
 traceRay !scn !startree !pt = let
