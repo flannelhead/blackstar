@@ -1,7 +1,7 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
 
 module ConfigFile
-    ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength
+    ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength, bloomDivider
            , starIntensity, starSaturation
            , diskColor, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
@@ -16,6 +16,7 @@ data Scene = Scene { safeDistance :: !Double
                    , stepSize :: !Double
                    , camera :: !Camera
                    , bloomStrength :: !Double
+                   , bloomDivider :: !Int
                    , starIntensity :: !Double
                    , starSaturation :: !Double
                    , diskColor :: !RGB
@@ -49,6 +50,7 @@ instance FromJSON Scene where
                            v .:? "stepSize"       .!= 0.3 <*>
                            v .:  "camera"                 <*>
                            v .:? "bloomStrength"  .!= 0.4 <*>
+                           v .:? "bloomDivider"   .!= 25  <*>
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskHSV"

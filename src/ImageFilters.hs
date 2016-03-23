@@ -68,10 +68,10 @@ boxBlur !r !passes !img = let
         out <- U.unsafeFreeze mv
         return $ R.fromUnboxed sh out
 
-bloom :: Monad m => Double -> RGBImage -> m RGBImage
-bloom strength img = do
+bloom :: Monad m => Double -> Int -> RGBImage -> m RGBImage
+bloom strength divider img = do
     let sh@(Z :. h :. w) = R.extent img
-    let blurred = boxBlur (w `div` 30) 3 img
+    let blurred = boxBlur (w `div` divider) 3 img
     R.computeUnboxedP . R.fromFunction sh
         $ \ix -> img `R.unsafeIndex` ix `addRGB`
                  mulRGB strength (blurred `R.unsafeIndex` ix)

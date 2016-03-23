@@ -92,7 +92,8 @@ doRender scn sceneName = do
 
             when (bloomStrength scn /= 0) $ do
                 putStrLn "Applying bloom..."
-                bloomed <- timeAction "Bloom" $ bloom (bloomStrength scn) img
+                bloomed <- timeAction "Bloom"
+                    $ bloom (bloomStrength scn) (bloomDivider scn) img
                 let bloomName = "output/" ++ sceneName ++ "-bloomed.png"
                 putStrLn $ "Saving to " ++ bloomName ++ "..."
                 promptOverwriteFile bloomName $ pngByteString bloomed
