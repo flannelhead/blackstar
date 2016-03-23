@@ -18,6 +18,15 @@ It is a tribute to David Bowie, referring to his last album.
 ## Building
 Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
+Alternatively, one can use plain `cabal` to build `blackstar` (although this is not recommended due to the various advantages `stack` gives over `cabal`). After cloning this repo, proceed with these commands in the root folder of the project:
+```
+cabal update
+cabal sandbox init
+cabal install --dependencies-only
+cabal build
+```
+It will take a while to build all the dependencies. Currently, building with `ghc` version `7.10.3` is supported.
+
 This repository includes a star lookup tree (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt tree in binary form is included for convenience, but you can also build it yourself. First, remove `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `blackstar` and the tree should be automatically generated and saved.
 
 ## Usage
@@ -26,6 +35,12 @@ When `blackstar` has been built with `stack`, you can run it with
 stack exec blackstar -- [-p|--preview] [scenename]
 ```
 Notice the two dashes (`--`) which are required to terminate `stack`'s argument list.
+
+`cabal` users can run `blackstar` by executing
+```
+cabal run [-p|--preview] [scenename]
+```
+in the root folder of the project.
 
 Scenes are defined using YAML config files. Look in the `scenes` folder for examples. `blackstar` looks for scenes under the `scenes` folder, so you'll have to put your scenes there, too. The scene file name should be passed to `blackstar` without the `.yaml` ending. If no scene name is passed, `blackstar` will render the `default` scene. The example image is exactly this scene.
 
