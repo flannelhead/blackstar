@@ -1,16 +1,16 @@
 # blackstar
-A black hole ray tracer written in Haskell.
+A black hole ray tracer written in Haskell. There's [an article](https://flannelhead.github.io/projects/blackstar.html) about this on my homepage. I've also written a [theoretical writeup](https://flannelhead.github.io/posts/2016-03-06-photons-and-black-holes.html) on Schwarzschild geodesics.
 
 ![An example image](https://raw.githubusercontent.com/flannelhead/blackstar/master/example.png)
 
 ## Goals
 * Fast, parallel ray tracing
 * Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) black holes
-* ~~Gracefully deal with coordinate singularities - maybe switch to Cartesian coordinates?~~ Now using Cartesian coordinates for Schwarzschild
 * Render accretion disks
 * Use a star catalog for the celestial sphere
 * Produce wallpaper quality material by smoothing the images
 * ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
+* ~~Gracefully deal with coordinate singularities - maybe switch to Cartesian coordinates?~~ Now using Cartesian coordinates for Schwarzschild
 
 ## What about the name?
 It is a tribute to David Bowie, referring to his last album.
