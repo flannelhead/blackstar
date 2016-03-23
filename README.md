@@ -65,10 +65,8 @@ This project was started when I was taking a general relativity course. On the c
 As always, there's a plenty of room for improvement. For example:
 
 * Implement supersampling
-* Investigate different integrators
 * Redshifting of the accretion disk?
 * Learn more about GHC and optimize the heck out of this
-* Faster Gaussian blur (a minor thing but become restrictive on larger image sizes)
 * Better progress reporting (might be hard to do)
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
