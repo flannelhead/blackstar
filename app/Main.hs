@@ -1,13 +1,16 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# OPTIONS_GHC -fno-cse #-}
+
 module Main where
 
-import System.Environment (getArgs)
 import System.Directory
 import System.IO
 import qualified Data.ByteString.Lazy as B
-import Control.Monad
+import Control.Monad (unless, when)
 import qualified Data.Array.Repa as R
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import Data.Time.Clock.POSIX (getPOSIXTime)
+import System.Console.CmdArgs
 
 import Raytracer
 import StarMap
@@ -15,25 +18,32 @@ import Color
 import ConfigFile
 import ImageFilters
 
+data Blackstar = Blackstar { preview :: Bool
+                       , scenename :: String }
+                       deriving (Show, Data, Typeable)
+
 main :: IO ()
 main = do
-    args <- getArgs
-    let filteredArgs = filter (`notElem` ["-p", "--preview"]) args
-    let preview = length args /= length filteredArgs
-    case filteredArgs of
-        []  -> doStart "default" preview
-        [f] -> doStart f preview
-        _   -> putStrLn "USAGE: blackstar [-p|--preview] [scenename]"
+    cmdline <- cmdArgs $ Blackstar { preview = False
+                                       &= help "preview render (small size)"
+                                   , scenename = def
+                                       &= argPos 0
+                                       &= typ "SCENENAME"
+                                       &= opt "default"
+                                   } &= summary "Blackstar v0.1"
+    doStart cmdline
 
-doStart :: String -> Bool -> IO ()
-doStart sceneName preview = do
+doStart :: Blackstar -> IO ()
+doStart cmdline = do
+    let sceneName = scenename cmdline
+    let pvw = preview cmdline
     let filename = "scenes/" ++ sceneName ++ ".yaml"
     putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
-    let sceneName' = if preview then sceneName ++ "-preview" else sceneName
+    let sceneName' = if pvw then sceneName ++ "-preview" else sceneName
     case cfg of
         Right scene -> putStrLn "Scene successfully read."
-                           >> doRender (prepareScene scene preview) sceneName'
+                           >> doRender (prepareScene scene pvw) sceneName'
         Left  err   -> putStrLn $ prettyPrintParseException err
 
 prepareScene :: Scene -> Bool -> Scene
