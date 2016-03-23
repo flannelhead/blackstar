@@ -13,6 +13,7 @@ import Raytracer
 import StarMap
 import Color
 import ConfigFile
+import ImageFilters
 
 main :: IO ()
 main = do

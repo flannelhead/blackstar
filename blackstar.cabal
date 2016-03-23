@@ -19,6 +19,7 @@ library
                      , StarMap
                      , Color
                      , ConfigFile
+                     , ImageFilters
   ghc-options:         -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields
   build-depends:       base >= 4.7 && < 5
                      , linear

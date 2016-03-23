@@ -10,7 +10,9 @@ module Color
     , addAlpha
     , dropAlpha
     , blend
-    , bloom
+    , addRGB
+    , subRGB
+    , mulRGB
     , hsvToRGB ) where
 
 import qualified Data.Vector.Unboxed as U
@@ -36,9 +38,9 @@ rgbImageToImage img = let
     Z :. h :. w = R.extent img
     res = Image { imageWidth = w
                 , imageHeight = h
-                , imageData = S.map (floor . max 0 . min 255 . (* 255))
-                    . S.convert . R.toUnboxed
-                    . R.computeUnboxedS $ R.interleave3 r g b }
+                , imageData = S.convert
+                    . U.map (floor . max 0 . min 255 . (* 255))
+                    . R.toUnboxed . R.computeUnboxedS $ R.interleave3 r g b }
     in ImageRGB8 res
 
 pngByteString :: RGBImage -> B.ByteString
@@ -74,46 +76,14 @@ blend (!tr, !tg, !tb, !ta) (!br, !bg, !bb, !ba) = let
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
     in (comp tr br, comp tg bg, comp tb bb, a)
 
--- Apply Gaussian blur and add it to the image weighted by a constant
-doBloom :: Monad m => Int -> Double -> RGBImage -> m RGBImage
-doBloom !rad !bloomStrength !src = let
-    sh@(Z :. h :. w) = R.extent src
+addRGB :: RGB -> RGB -> RGB
+{-# INLINE addRGB #-}
+addRGB (!r, !g, !b) (!r', !g', !b') = (r+r', g+g', b+b')
 
-    kernel :: U.Vector (Double, Int)
-    kernel = U.fromList
-        [ let r' = fromIntegral r
-              sigma = (fromIntegral rad / 3)
-              a = sqrt bloomStrength
-          in (a * exp (-(r'*r') / (2*sigma*sigma)) / (sqrt(2*pi)*sigma), r)
-        | r <- [ -rad .. rad ] ]
+subRGB :: RGB -> RGB -> RGB
+{-# INLINE subRGB #-}
+subRGB (!r, !g, !b) (!r', !g', !b') = (r-r', g-g', b-b')
 
-    convolve !acc !img !ix = U.foldl' (acc img ix) 0 kernel
-    accH !img (Z :. y :. x) !pxl (!weight, !r)
-        | x' < 0 || x' >= w = pxl
-        | otherwise = pxl + weight * (img `R.unsafeIndex` ix2 y x')
-        where x' = x + r
-    accV !img (Z :. y :. x) !pxl (!weight, !r)
-        | y' < 0 || y' >= w = pxl
-        | otherwise = pxl + weight * (img `R.unsafeIndex` ix2 y' x)
-        where y' = y + r
-
-    convolveH, convolveV, process :: Monad m => R.Array R.U DIM2 Double
-                                  -> m (R.Array R.U DIM2 Double)
-    convolveH img = R.computeUnboxedP $ R.fromFunction sh (convolve accH img)
-    convolveV img = R.computeUnboxedP $ R.fromFunction sh (convolve accV img)
-    process img = do
-        img' <- convolveH img
-        img'' <- convolveV img'
-        R.computeUnboxedP $ R.fromFunction sh (\ix -> img `R.unsafeIndex` ix
-                                                    + img'' `R.unsafeIndex` ix)
-
-    (r, g, b) = RU.unzip3 src
-    in do r' <- process r
-          g' <- process g
-          b' <- process b
-          return $ RU.zip3 r' g' b'
-
-bloom :: Monad m => Double -> RGBImage -> m RGBImage
-bloom strength src = do
-    let sh@(Z :. _ :. w) = R.extent src
-    doBloom (w `div` 20) strength src
+mulRGB :: Double -> RGB -> RGB
+{-# INLINE mulRGB #-}
+mulRGB !a (!r, !g, !b) = (a*r, a*g, a*b)
