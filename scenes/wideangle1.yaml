@@ -3,9 +3,10 @@ camera:
     lookAt:     [3.5, 0, 0]
     upVec:      [0, 1, 0]
     fov:        2
-    resolution: [3840, 2160]
+    resolution: [1920, 1080]
 
 bloomStrength: 0.3
 starIntensity: 0.7
 starSaturation: 0.7
 diskOpacity: 0
+supersampling: true

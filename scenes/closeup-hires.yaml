@@ -3,7 +3,7 @@ camera:
     lookAt:     [0, 0, 6]
     upVec:      [0, 1, 0]
     fov:        1.2
-    resolution: [3200, 2400]
+    resolution: [1600, 1200]
 
 bloomStrength: 0.7
 starIntensity: 0.7
@@ -11,3 +11,4 @@ starSaturation: 0.7
 diskOpacity: 0.95
 diskInner: 3
 diskOuter: 9
+supersampling: true
