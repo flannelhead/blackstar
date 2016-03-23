@@ -53,7 +53,7 @@ OR
 cabal run -- --help
 ```
 
-Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved).
+Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved). This is called supersampling and is implemented in `blackstar`. It can be enabled by setting `supersampling` to true in the YAML config file &mdash; see `scenes/default-aa.yaml` for an example.
 
 ## Profiling
 Thanks to `stack`, profiling is incredibly easy. Rebuild `blackstar` by running
@@ -86,9 +86,9 @@ This project was started when I was taking a general relativity course. On the c
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Implement supersampling
+* Better documentation for the config format
 * Redshifting of the accretion disk?
-* Learn more about GHC and optimize the heck out of this
 * Better progress reporting (might be hard to do)
+* Batch / animation mode (a major thing that needs some thinking first)
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
