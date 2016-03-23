@@ -19,18 +19,23 @@ import ConfigFile
 import ImageFilters
 
 data Blackstar = Blackstar { preview :: Bool
-                       , scenename :: String }
-                       deriving (Show, Data, Typeable)
+                           , overwrite :: Bool
+                           , scenename :: String }
+                           deriving (Show, Data, Typeable)
+
+argparser = Blackstar { preview = def
+                          &= help "preview render (small size)"
+                      , overwrite = def
+                          &= help "overwrite images without asking"
+                      , scenename = def
+                          &= argPos 0
+                          &= typ "SCENENAME"
+                          &= opt "default"
+                      } &= summary "Blackstar v0.1"
 
 main :: IO ()
 main = do
-    cmdline <- cmdArgs $ Blackstar { preview = False
-                                       &= help "preview render (small size)"
-                                   , scenename = def
-                                       &= argPos 0
-                                       &= typ "SCENENAME"
-                                       &= opt "default"
-                                   } &= summary "Blackstar v0.1"
+    cmdline <- cmdArgs argparser
     doStart cmdline
 
 doStart :: Blackstar -> IO ()
@@ -43,7 +48,7 @@ doStart cmdline = do
     let sceneName' = if pvw then sceneName ++ "-preview" else sceneName
     case cfg of
         Right scene -> putStrLn "Scene successfully read."
-                           >> doRender (prepareScene scene pvw) sceneName'
+                         >> doRender cmdline (prepareScene scene pvw) sceneName'
         Left  err   -> putStrLn $ prettyPrintParseException err
 
 prepareScene :: Scene -> Bool -> Scene
@@ -85,8 +90,9 @@ timeAction name action = do
         ++ " min " ++ show (secs `rem` 60) ++ " sec."
     return res
 
-doRender :: Scene -> String -> IO ()
-doRender scn sceneName = do
+doRender :: Blackstar -> Scene -> String -> IO ()
+doRender cmdline scn sceneName = do
+    let doWrite = if overwrite cmdline then B.writeFile else promptOverwriteFile
     putStrLn "Reading the star tree..."
     mStarTree <- readStarTree
     case mStarTree of
@@ -98,7 +104,7 @@ doRender scn sceneName = do
             let outName = "output/" ++ sceneName ++ ".png"
             putStrLn $ "Saving to " ++ outName ++ "..."
             doesDirectoryExist "output" >>= (`unless` createDirectory "output")
-            promptOverwriteFile outName $ pngByteString img
+            doWrite outName $ pngByteString img
 
             when (bloomStrength scn /= 0) $ do
                 putStrLn "Applying bloom..."
@@ -106,7 +112,7 @@ doRender scn sceneName = do
                     $ bloom (bloomStrength scn) (bloomDivider scn) img
                 let bloomName = "output/" ++ sceneName ++ "-bloomed.png"
                 putStrLn $ "Saving to " ++ bloomName ++ "..."
-                promptOverwriteFile bloomName $ pngByteString bloomed
+                doWrite bloomName $ pngByteString bloomed
 
             putStrLn "Everything done. Thank you!"
         _ -> putStrLn "Couldn't load the star tree."
