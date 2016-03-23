@@ -32,19 +32,26 @@ This repository includes a star lookup tree (`stars.kdt`), which has been genera
 ## Usage
 When `blackstar` has been built with `stack`, you can run it with
 ```
-stack exec blackstar -- [-p|--preview] [scenename]
+stack exec blackstar -- [-p|--preview] [-o|--overwrite] [SCENENAME]
 ```
 Notice the two dashes (`--`) which are required to terminate `stack`'s argument list.
 
 `cabal` users can run `blackstar` by executing
 ```
-cabal run [-p|--preview] [scenename]
+cabal run -- [OPTIONS] [scenename]
 ```
 in the root folder of the project.
 
 Scenes are defined using YAML config files. Look in the `scenes` folder for examples. `blackstar` looks for scenes under the `scenes` folder, so you'll have to put your scenes there, too. The scene file name should be passed to `blackstar` without the `.yaml` ending. If no scene name is passed, `blackstar` will render the `default` scene. The example image is exactly this scene.
 
-The rendered files go into the folder `output`, named `scenename.png` and `scenename-bloomed.png`. The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters.
+The rendered files go into the folder `output`, named `scenename.png` and `scenename-bloomed.png`. The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters. The `--overwrite` flag will cause `blackstar` to overwrite output images without a prompt.
+
+There's also a help text which can be seen by running
+```
+stack exec blackstar -- help
+OR
+cabal run -- --help
+```
 
 Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved).
 
