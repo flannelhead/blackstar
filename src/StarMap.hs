@@ -1,7 +1,8 @@
 {-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 
 module StarMap
-    ( Star, StarTree, readMapFromFile, readTreeFromFile, treeToByteString
+    ( Star, StarTree, StoredStarTree
+    , readMapFromFile, readTreeFromFile, treeToByteString, convertTree
     , buildStarTree, sqrnorm, starLookup ) where
 
 import System.Directory
@@ -17,9 +18,11 @@ import Color
 
 type Star = (V3 Double, (Int, Double, Double))
 type StarTree = KdMap Double (V3 Double) (Int, Double, Double)
+type StoredStar = (V3 Double, (Int, Char))
+type StoredStarTree = KdMap Double (V3 Double) (Int, Char)
 
-instance Serialize StarTree
-instance Serialize (TreeNode Double (V3 Double) (Int, Double, Double))
+instance Serialize StoredStarTree
+instance Serialize (TreeNode Double (V3 Double) (Int, Char))
 
 -- We can't serialize functions but let's hack around it so that we can
 -- serialize the KdMap anyway
@@ -33,7 +36,7 @@ instance Serialize (PointAsListFn Double (V3 Double)) where
 
 -- Parse the star list in the binary format specified at
 -- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
-readMap :: Get [Star]
+readMap :: Get [StoredStar]
 readMap = do
     -- Skip the header
     skip 28
@@ -45,11 +48,11 @@ readMap = do
         skip 1
         mag <- getInt16be
         skip 8
-        return (raDecToCartesian ra dec, starColor' (fromIntegral mag)
-                . chr $ fromIntegral spectral)
+        return ( raDecToCartesian ra dec
+               , (fromIntegral mag, chr $ fromIntegral spectral) )
 
-starColor' :: Int -> Char -> (Int, Double, Double)
-starColor' !mag !ch = let (!h, !s) = starColor ch in (mag, h, s)
+starColor' :: (Int, Char) -> (Int, Double, Double)
+starColor' (!mag, !ch) = let (!h, !s) = starColor ch in (mag, h, s)
 
 -- Some nice colour values for different spectral types
 starColor :: Char -> (Double, Double)
@@ -72,21 +75,24 @@ readSafe path = do
               else return . Left $ "Error: file " ++ path
                   ++ " doesn't exist.\n"
 
-readMapFromFile :: FilePath -> IO (Either String [Star])
+readMapFromFile :: FilePath -> IO (Either String [StoredStar])
 readMapFromFile path = do
     ebs <- readSafe path
     return $ ebs >>= runGet readMap
 
-readTreeFromFile :: FilePath -> IO (Either String StarTree)
+readTreeFromFile :: FilePath -> IO (Either String StoredStarTree)
 readTreeFromFile path = do
     ebs <- readSafe path
-    return $ ebs >>= decode
+    return $ decode =<< ebs
 
-treeToByteString :: StarTree -> B.ByteString
+treeToByteString :: StoredStarTree -> B.ByteString
 treeToByteString = encode
 
-buildStarTree :: [Star] -> StarTree
+buildStarTree :: [StoredStar] -> StoredStarTree
 buildStarTree = build v3AsList
+
+convertTree :: StoredStarTree -> StarTree
+convertTree = fmap starColor'
 
 v3AsList :: V3 Double -> [Double]
 v3AsList (V3 !x !y !z) = [x, y, z]

@@ -59,7 +59,7 @@ prepareScene scn preview = let
     newRes = if w >= h then (res, res * h `div` w) else (res * w `div` h, res)
     in if preview then scn { camera = cam { resolution = newRes } } else scn
 
-readStarTree :: IO (Maybe StarTree)
+readStarTree :: IO (Maybe StoredStarTree)
 readStarTree = do
     let treePath = "stars.kdt"
     eitherTree <- readTreeFromFile treePath
@@ -99,7 +99,7 @@ doRender cmdline scn sceneName = do
         Just startree -> do
             putStrLn "Star tree read. Rendering..."
             img <- timeAction "Rendering"
-                $ R.computeUnboxedP (render scn startree)
+                $ R.computeUnboxedP (render scn $ convertTree startree)
 
             let outName = "output/" ++ sceneName ++ ".png"
             putStrLn $ "Saving to " ++ outName ++ "..."
