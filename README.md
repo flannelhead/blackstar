@@ -1,4 +1,4 @@
-# blackstar
+# Blackstar
 A black hole ray tracer written in Haskell. There's [an article](https://flannelhead.github.io/projects/blackstar.html) about this on my homepage. I've also written a [theoretical writeup](https://flannelhead.github.io/posts/2016-03-06-photons-and-black-holes.html) on Schwarzschild geodesics.
 
 ![An example image](https://raw.githubusercontent.com/flannelhead/blackstar/master/example.png)
