@@ -48,7 +48,7 @@ The rendered files go into the folder `output`, named `scenename.png` and `scene
 
 There's also a help text which can be seen by running
 ```
-stack exec blackstar -- help
+stack exec blackstar -- --help
 OR
 cabal run -- --help
 ```
