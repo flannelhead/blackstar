@@ -3,14 +3,15 @@ A black hole ray tracer written in Haskell. There's [an article](https://flannel
 
 ![An example image](https://raw.githubusercontent.com/flannelhead/blackstar/master/example.png)
 
-## Goals
+## Features
 * Fast, parallel ray tracing
-* Render [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) black holes
-* Render accretion disks
-* Use a star catalog for the celestial sphere
-* Produce wallpaper quality material by smoothing the images
-* ~~Use [automatic differentiation](https://en.wikipedia.org/wiki/Automatic_differentiation) to compute the [Christoffel symbols](https://en.wikipedia.org/wiki/Levi-Civita_connection#Christoffel_symbols) from a user-supplied metric~~ As an idea this is fine, but it was painfully slow. Probably will return to that some day
-* ~~Gracefully deal with coordinate singularities - maybe switch to Cartesian coordinates?~~ Now using Cartesian coordinates for Schwarzschild
+* Rendering [Schwarzschild](https://en.wikipedia.org/wiki/Schwarzschild_metric) black holes
+* Rendering accretion disks
+* Drawing the celestial sphere using a star catalogue
+* Bloom effect
+* Antialiasing by 4x supersampling for smoother images
+* Easy, YAML based configuration
+* A simple CLI
 
 ## What about the name?
 It is a tribute to David Bowie, referring to his last album.
@@ -65,21 +66,6 @@ and then run it with
 stack exec blackstar -- +RTS -p
 ```
 The profile will be generated to `blackstar.prof`.
-
-## Implementation
-[`JuicyPixels`](http://hackage.haskell.org/package/JuicyPixels) and [`repa`](http://hackage.haskell.org/package/repa) were used for fast, parallel computation of the image. [`kdt`](https://hackage.haskell.org/package/kdt) was used for fast lookups into a star catalog.
-
-## Things I've learnt
-* Using explicit `Double` datatypes instead of polymorphism via the `Floating` typeclass can make a huge difference in terms of speed
-* Automatic differentiation is a *really* elegant idea but comes with an overhead
-* How to spell Schwarzchild correctly
-
-## Inspiration
-This project was heavily inspired by [this excellent article](http://rantonels.github.io/starless/) and the [Python code](http://github.com/rantonels/starless) by [rantonels](https://github.com/rantonels). Without him, this project would never have born. You'll most certainly notice some similarities but also differences.
-
-The movie Interstellar did an excellent rendition of a black hole. They also published a [paper](http://iopscience.iop.org/article/10.1088/0264-9381/32/6/065001) describing their discoveries.
-
-This project was started when I was taking a general relativity course. On the course, [Sean Carroll's lecture notes](http://arxiv.org/pdf/gr-qc/9712019.pdf) were followed and proved very helpful for me.
 
 ## TODO
 As always, there's a plenty of room for improvement. For example:
