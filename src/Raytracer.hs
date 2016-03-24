@@ -44,16 +44,17 @@ traceRay :: Scene -> StarTree -> DIM2 -> RGB
 traceRay !scn !startree !pt = let
         ray@(vel, pos) = generateRay scn pt
         h2 = sqrnorm $ pos `cross` vel
-    in dropAlpha . colorize scn startree (rk4 (stepSize scn) h2) $ ray
+    in dropAlpha . colorize scn startree h2 $ ray
 
-colorize :: Scene -> StarTree
-         -> ((V3 Double, V3 Double) -> (V3 Double, V3 Double))
-         -> (V3 Double, V3 Double) -> RGBA
-colorize !scn !startree !next !crd = let newCrd = next crd in
-    case findColor scn startree crd newCrd of
-        Layer rgba -> blend rgba $ colorize scn startree next newCrd
-        Bottom rgba -> rgba
-        None -> colorize scn startree next newCrd
+colorize :: Scene -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
+colorize !scn !startree !h2 !crd = let
+    colorize' !crd' = let
+        newCrd = rk4 (stepSize scn) h2 crd'
+        in case findColor scn startree crd' newCrd of
+            Layer rgba -> blend rgba $ colorize' newCrd
+            Bottom rgba -> rgba
+            None -> colorize' newCrd
+    in colorize' crd
 
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
