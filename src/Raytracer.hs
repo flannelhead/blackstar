@@ -48,13 +48,13 @@ traceRay !scn !startree !pt = let
 
 colorize :: Scene -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
 colorize !scn !startree !h2 !crd = let
-    colorize' !crd' = let
+    colorize' !rgba !crd' = let
         newCrd = rk4 (stepSize scn) h2 crd'
         in case findColor scn startree crd' newCrd of
-            Layer rgba -> blend rgba $ colorize' newCrd
-            Bottom rgba -> rgba
-            None -> colorize' newCrd
-    in colorize' crd
+            Layer rgba' -> colorize' (blend rgba rgba') newCrd
+            Bottom rgba' -> blend rgba rgba'
+            None -> colorize' rgba newCrd
+    in colorize' (0, 0, 0, 0) crd
 
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
