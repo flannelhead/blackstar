@@ -65,16 +65,15 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
     | diskOpacity scn /= 0 && (signum y' /= signum y)
         && r2ave > diskInner scn && r2ave < diskOuter scn
-        = Layer $ diskColor' scn (sqrt r2ave) phiave
+        = Layer $ diskColor' scn (sqrt r2ave)
     | otherwise = None
     where r2 = sqrnorm pos
           r2' = sqrnorm newPos
           r2ave = (y'*r2 - y*r2') / (y' - y)
-          phiave = (y'*atan2 z x - y*atan2 z' x') / (y' - y)
 
-diskColor' :: Scene -> Double -> Double -> RGBA
+diskColor' :: Scene -> Double -> RGBA
 {-# INLINE diskColor' #-}
-diskColor' !scn !r _ = let
+diskColor' !scn !r = let
         inner = sqrt (diskInner scn)
         dr = sqrt (diskOuter scn) - inner
         alpha = sin (pi*(1 - (r-inner)/dr)^2)
