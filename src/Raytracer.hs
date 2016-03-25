@@ -63,7 +63,7 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
     | r2 < 1 = Bottom (0, 0, 0, 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
-    | diskOpacity scn /= 0 && (signum y' /= signum y)
+    | diskOpacity scn /= 0 && signum y' /= signum y
         && r2ave > diskInner scn && r2ave < diskOuter scn
         = Layer $ diskColor' scn (sqrt r2ave)
     | otherwise = None
@@ -75,8 +75,8 @@ diskColor' :: Scene -> Double -> RGBA
 {-# INLINE diskColor' #-}
 diskColor' !scn !r = let
         inner = sqrt (diskInner scn)
-        dr = sqrt (diskOuter scn) - inner
-        alpha = sin (pi*(1 - (r-inner)/dr)^2)
+        outer = sqrt (diskOuter scn)
+        alpha = sin (pi * ((outer-r) / (outer-inner))^2)
     in addAlpha (diskColor scn) (alpha * diskOpacity scn)
 
 rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
