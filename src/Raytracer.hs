@@ -34,9 +34,10 @@ render !scn !startree = if supersampling scn then supersample img else img
           cam = camera scn
           (w, h) = resolution cam
           res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
-          scn' = scn { safeDistance = max (50^2) (2 * sqrnorm (position cam))
-                     , diskInner = diskInner scn ^ 2
-                     , diskOuter = diskOuter scn ^ 2
+          scn' = scn { safeDistance =
+                           max (50^(2 :: Int)) (2 * sqrnorm (position cam))
+                     , diskInner = diskInner scn ^ (2 :: Int)
+                     , diskOuter = diskOuter scn ^ (2 :: Int)
                      , diskColor = hsvToRGB $ diskColor scn
                      , camera = cam { resolution = res } }
 
@@ -59,7 +60,7 @@ colorize !scn !startree !h2 !crd = let
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
 {-# INLINE findColor #-}
-findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
+findColor !scn !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
     | r2 < 1 = Bottom (0, 0, 0, 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
@@ -74,9 +75,9 @@ findColor !scn !startree (!vel, pos@(V3 !x !y !z)) (_, newPos@(V3 !x' !y' !z'))
 diskColor' :: Scene -> Double -> RGBA
 {-# INLINE diskColor' #-}
 diskColor' !scn !r = let
-        inner = sqrt (diskInner scn)
-        outer = sqrt (diskOuter scn)
-        alpha = sin (pi * ((outer-r) / (outer-inner))^2)
+        rInner = sqrt (diskInner scn)
+        rOuter = sqrt (diskOuter scn)
+        alpha = sin (pi * ((rOuter-r) / (rOuter-rInner))^(2 :: Int))
     in addAlpha (diskColor scn) (alpha * diskOpacity scn)
 
 rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
@@ -93,4 +94,4 @@ rk4 !h !h2 !y = y `add`
           {-# INLINE add #-}
           add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
           {-# INLINE f #-}
-          f (!vel, !pos) = (-1.5*h2 / (norm pos ^ 5) *^ pos, vel)
+          f (!vel, !pos) = (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos, vel)

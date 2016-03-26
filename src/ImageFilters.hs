@@ -50,7 +50,7 @@ boxBlur !r !passes !img = let
         {-# INLINE accumulate #-}
         accumulate !rgb !x = do
             let newRGB =  (rgb `addRGB` pix (x+r)) `subRGB` pix (x-r)
-            writeToVec (ix1df y x) $ mulRGB normFactor newRGB
+            _ <- writeToVec (ix1df y x) $ mulRGB normFactor newRGB
             return newRGB
         -- Sweep over the row / col of the image
         in U.foldM'_ accumulate startVal crds
@@ -70,7 +70,7 @@ boxBlur !r !passes !img = let
 
 bloom :: Monad m => Double -> Int -> RGBImage -> m RGBImage
 bloom strength divider img = let
-    sh@(Z :. h :. w) = R.extent img
+    sh@(Z :. _ :. w) = R.extent img
     blurred = boxBlur (w `div` divider) 3 img
     {-# INLINE f #-}
     f !ix = img `R.unsafeIndex` ix `addRGB`

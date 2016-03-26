@@ -23,6 +23,7 @@ data Blackstar = Blackstar { preview :: Bool
                            , scenename :: String }
                            deriving (Show, Data, Typeable)
 
+argparser :: Blackstar
 argparser = Blackstar { preview = def
                           &= help "preview render (small size)"
                       , overwrite = def
@@ -52,12 +53,12 @@ doStart cmdline = do
         Left  err   -> putStrLn $ prettyPrintParseException err
 
 prepareScene :: Scene -> Bool -> Scene
-prepareScene scn preview = let
+prepareScene scn doPreview = let
     cam = camera scn
     (w, h) = resolution cam
     res = 300
     newRes = if w >= h then (res, res * h `div` w) else (res * w `div` h, res)
-    in if preview then scn { camera = cam { resolution = newRes } } else scn
+    in if doPreview then scn { camera = cam { resolution = newRes } } else scn
 
 readStarTree :: IO (Maybe StoredStarTree)
 readStarTree = do
@@ -81,12 +82,12 @@ readStarTree = do
                     return Nothing
 
 timeAction :: String -> IO a -> IO a
-timeAction name action = do
+timeAction actionName action = do
     time1 <- (round <$> getPOSIXTime) :: IO Int
     res <- action
     time2 <- round <$> getPOSIXTime
     let secs = time2 - time1
-    putStrLn $ name ++ " completed in " ++ show (secs `div` 60)
+    putStrLn $ actionName ++ " completed in " ++ show (secs `div` 60)
         ++ " min " ++ show (secs `rem` 60) ++ " sec."
     return res
 

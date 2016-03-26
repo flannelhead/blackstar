@@ -127,6 +127,6 @@ starLookup !starmap !intensity !saturation !vel = let
         -- and brightness of the star.
         a = log 2 / (m0 - m1)
         val = (* intensity) . min 1
-              . exp $ a*(m2 - fromIntegral mag) - d2/(2*w^2)
+              . exp $ a*(m2 - fromIntegral mag) - d2/(2*w^(2 :: Int))
     in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
                    else (0, 0, 0, 1)
