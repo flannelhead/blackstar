@@ -13,11 +13,11 @@ import Color
 import ConfigFile
 import ImageFilters
 
-data Layer = Layer !RGBA | Bottom !RGBA | None
+data Layer = Layer RGBA | Bottom RGBA | None
 
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Scene -> DIM2 -> (V3 Double, V3 Double)
-generateRay !scn (Z :. y' :. x') = (vel, pos)
+generateRay scn (Z :. y' :. x') = (vel, pos)
     where cam = camera scn
           pos = position cam
           w = fromIntegral . fst $ resolution cam
@@ -29,7 +29,7 @@ generateRay !scn (Z :. y' :. x') = (vel, pos)
                       (-1)
 
 render :: Scene -> StarTree -> RGBImageDelayed
-render !scn !startree = if supersampling scn then supersample img else img
+render scn startree = if supersampling scn then supersample img else img
     where img = R.fromFunction (ix2 h' w') (traceRay scn' startree)
           cam = camera scn
           (w, h) = resolution cam
@@ -42,13 +42,13 @@ render !scn !startree = if supersampling scn then supersample img else img
                      , camera = cam { resolution = res } }
 
 traceRay :: Scene -> StarTree -> DIM2 -> RGB
-traceRay !scn !startree !pt = let
+traceRay scn startree pt = let
         ray@(vel, pos) = generateRay scn pt
         h2 = sqrnorm $ pos `cross` vel
     in dropAlpha . colorize scn startree h2 $ ray
 
 colorize :: Scene -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
-colorize !scn !startree !h2 !crd = let
+colorize scn startree !h2 !crd = let
     colorize' !rgba !crd' = let
         newCrd = rk4 (stepSize scn) h2 crd'
         in case findColor scn startree crd' newCrd of
@@ -60,7 +60,7 @@ colorize !scn !startree !h2 !crd = let
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
 {-# INLINE findColor #-}
-findColor !scn !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
+findColor scn startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
     | r2 < 1 = Bottom (0, 0, 0, 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
@@ -74,7 +74,7 @@ findColor !scn !startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
 
 diskColor' :: Scene -> Double -> RGBA
 {-# INLINE diskColor' #-}
-diskColor' !scn !r = let
+diskColor' scn !r = let
         rInner = sqrt (diskInner scn)
         rOuter = sqrt (diskOuter scn)
         alpha = sin (pi * ((rOuter-r) / (rOuter-rInner))^(2 :: Int))

@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE Strict #-}
 
 module Color
     ( RGB
@@ -47,7 +47,7 @@ pngByteString :: RGBImage -> B.ByteString
 pngByteString img = imageToPng $ rgbImageToImage img
 
 hsvToRGB :: HSV -> RGB
-hsvToRGB (!h, !s, !v) = let
+hsvToRGB (h, s, v) = let
     c = v * s
     h' = h / 60
     x = c * (1 - abs ((h' `mod'` 2) - 1))
@@ -64,26 +64,26 @@ hsvToRGB (!h, !s, !v) = let
 
 addAlpha :: RGB -> Double -> RGBA
 {-# INLINE addAlpha #-}
-addAlpha (!r, !g, !b) !a = (r, g, b, a)
+addAlpha (r, g, b) a = (r, g, b, a)
 
 dropAlpha :: RGBA -> RGB
-dropAlpha (!r, !g, !b, _) = (r, g, b)
+dropAlpha (r, g, b, _) = (r, g, b)
 
 blend :: RGBA -> RGBA -> RGBA
 {-# INLINE blend #-}
-blend (!tr, !tg, !tb, !ta) (!br, !bg, !bb, !ba) = let
+blend (tr, tg, tb, ta) (br, bg, bb, ba) = let
         a = ta + ba * (1 - ta)
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
     in (comp tr br, comp tg bg, comp tb bb, a)
 
 addRGB :: RGB -> RGB -> RGB
 {-# INLINE addRGB #-}
-addRGB (!r, !g, !b) (!r', !g', !b') = (r+r', g+g', b+b')
+addRGB (r, g, b) (r', g', b') = (r+r', g+g', b+b')
 
 subRGB :: RGB -> RGB -> RGB
 {-# INLINE subRGB #-}
-subRGB (!r, !g, !b) (!r', !g', !b') = (r-r', g-g', b-b')
+subRGB (r, g, b) (r', g', b') = (r-r', g-g', b-b')
 
 mulRGB :: Double -> RGB -> RGB
 {-# INLINE mulRGB #-}
-mulRGB !a (!r, !g, !b) = (a*r, a*g, a*b)
+mulRGB a (r, g, b) = (a*r, a*g, a*b)
