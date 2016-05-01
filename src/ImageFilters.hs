@@ -6,7 +6,6 @@ import qualified Data.Array.Repa as R
 import Data.Array.Repa.Index
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
-import Control.Monad.ST (runST)
 import Control.Monad (replicateM_)
 
 import Color
@@ -15,7 +14,7 @@ ix1d :: Int -> Int -> Int -> Int
 {-# INLINE ix1d #-}
 ix1d !w !y !x = y*w + x
 
-boxBlur :: Int -> Int -> RGBImage -> RGBImage
+boxBlur :: Int -> Int -> RGBImage -> IO RGBImage
 boxBlur !r !passes !img = let
     !sh@(Z :. h :. w) = R.extent img
     rows = U.enumFromN (0 :: Int) h
@@ -55,7 +54,7 @@ boxBlur !r !passes !img = let
         -- Sweep over the row / col of the image
         in U.foldM'_ accumulate startVal crds
 
-    in runST $ do
+    in do
         mv <- U.thaw $ R.toUnboxed img
         let wrt = MU.unsafeWrite mv
         replicateM_ passes $ do
@@ -68,14 +67,13 @@ boxBlur !r !passes !img = let
         out <- U.unsafeFreeze mv
         return $ R.fromUnboxed sh out
 
-bloom :: Monad m => Double -> Int -> RGBImage -> m RGBImage
-bloom strength divider img = let
-    sh@(Z :. _ :. w) = R.extent img
-    blurred = boxBlur (w `div` divider) 3 img
-    {-# INLINE f #-}
-    f !ix = img `R.unsafeIndex` ix `addRGB`
-            mulRGB strength (blurred `R.unsafeIndex` ix)
-    in R.computeUnboxedP $ R.fromFunction sh f
+bloom :: Double -> Int -> RGBImage -> IO RGBImage
+bloom strength divider img = do
+    let sh@(Z :. _ :. w) = R.extent img
+    blurred <- boxBlur (w `div` divider) 3 img
+    R.computeUnboxedP . R.fromFunction sh
+        $ \ix -> img `R.unsafeIndex` ix `addRGB`
+                 mulRGB strength (blurred `R.unsafeIndex` ix)
 
 supersample :: RGBImageDelayed -> RGBImageDelayed
 supersample img = let
