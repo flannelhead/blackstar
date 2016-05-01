@@ -11,6 +11,7 @@ import qualified Data.Array.Repa as R
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import System.Console.CmdArgs
+import System.FilePath
 
 import Raytracer
 import StarMap
@@ -19,19 +20,22 @@ import ConfigFile
 import ImageFilters
 
 data Blackstar = Blackstar { preview :: Bool
-                           , overwrite :: Bool
-                           , scenename :: String }
+                           , output :: String
+                           , force :: Bool
+                           , inputfile :: String }
                            deriving (Show, Data, Typeable)
 
 argparser :: Blackstar
 argparser = Blackstar { preview = def
                           &= help "preview render (small size)"
-                      , overwrite = def
+                      , output = ""
+                          &= help "output directory"
+                          &= typ "PATH"
+                      , force = def
                           &= help "overwrite images without asking"
-                      , scenename = def
+                      , inputfile = def
                           &= argPos 0
-                          &= typ "SCENENAME"
-                          &= opt "default"
+                          &= typ "INPUTFILE"
                       } &= summary "Blackstar v0.1"
 
 main :: IO ()
@@ -39,17 +43,27 @@ main = do
     cmdline <- cmdArgs argparser
     doStart cmdline
 
+normalizePath :: FilePath -> IO FilePath
+normalizePath path = (dropTrailingPathSeparator . normalise)
+    <$> makeRelativeToCurrentDirectory path
+
 doStart :: Blackstar -> IO ()
 doStart cmdline = do
-    let sceneName = scenename cmdline
+    filename <- normalizePath $ inputfile cmdline
     let pvw = preview cmdline
-    let filename = "scenes/" ++ sceneName ++ ".yaml"
+    let sceneName = takeBaseName filename
+    when (output cmdline /= "")
+        $ createDirectoryIfMissing True (output cmdline)
+    outdir <- normalizePath =<< case output cmdline of
+                  "" -> getCurrentDirectory
+                  x  -> return x
     putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
     let sceneName' = if pvw then sceneName ++ "-preview" else sceneName
     case cfg of
         Right scene -> putStrLn "Scene successfully read."
                          >> doRender cmdline (prepareScene scene pvw) sceneName'
+                              outdir
         Left  err   -> putStrLn $ prettyPrintParseException err
 
 prepareScene :: Scene -> Bool -> Scene
@@ -91,9 +105,9 @@ timeAction actionName action = do
         ++ " min " ++ show (secs `rem` 60) ++ " sec."
     return res
 
-doRender :: Blackstar -> Scene -> String -> IO ()
-doRender cmdline scn sceneName = do
-    let doWrite = if overwrite cmdline then B.writeFile else promptOverwriteFile
+doRender :: Blackstar -> Scene -> String -> String -> IO ()
+doRender cmdline scn sceneName outdir = do
+    let doWrite = if force cmdline then B.writeFile else promptOverwriteFile
     putStrLn "Reading the star tree..."
     mStarTree <- readStarTree
     case mStarTree of
@@ -102,7 +116,7 @@ doRender cmdline scn sceneName = do
             img <- timeAction "Rendering"
                 $ R.computeUnboxedP (render scn $ convertTree startree)
 
-            let outName = "output/" ++ sceneName ++ ".png"
+            outName <- normalizePath $ outdir ++ "/" ++ sceneName ++ ".png"
             putStrLn $ "Saving to " ++ outName ++ "..."
             doesDirectoryExist "output" >>= (`unless` createDirectory "output")
             doWrite outName $ pngByteString img
@@ -111,7 +125,8 @@ doRender cmdline scn sceneName = do
                 putStrLn "Applying bloom..."
                 bloomed <- timeAction "Bloom"
                     $ bloom (bloomStrength scn) (bloomDivider scn) img
-                let bloomName = "output/" ++ sceneName ++ "-bloomed.png"
+                bloomName <- normalizePath
+                    $ outdir ++ "/" ++ sceneName ++ "-bloomed.png"
                 putStrLn $ "Saving to " ++ bloomName ++ "..."
                 doWrite bloomName $ pngByteString bloomed
 
