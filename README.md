@@ -39,7 +39,7 @@ Notice the two dashes (`--`) which are required to terminate `stack`'s argument 
 
 `cabal` users can run `blackstar` by executing
 ```
-cabal run -- [OPTIONS] [scenename]
+cabal run -- [OPTIONS] SCENENAME
 ```
 in the root folder of the project.
 
