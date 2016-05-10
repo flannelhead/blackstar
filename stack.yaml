@@ -3,12 +3,12 @@ extra-package-dbs: []
 packages:
 - '.'
 - location:
-    git: git@github.com:DDCSF/repa
+    git: https://github.com/DDCSF/repa.git
     commit: e3568d7a1213c208dba30c6acf8f12d84ef307e2
   subdirs:
   - repa
 - location:
-    git: git@github.com:ekmett/linear
+    git: https://github.com/ekmett/linear.git
     commit: 8da21dc72714441cb34d6eabd6c224819787365c
 setup-info:
   ghc:
