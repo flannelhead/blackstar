@@ -2,10 +2,9 @@
 
 module StarMap
     ( Star, StarTree, StoredStarTree
-    , readMapFromFile, readTreeFromFile, treeToByteString, convertTree
+    , readMapFromFile, treeToByteString, readTreeFromFile
     , buildStarTree, sqrnorm, starLookup ) where
 
-import System.Directory
 import Control.Monad
 import Data.Word
 import Data.Char
@@ -15,6 +14,7 @@ import Data.KdMap.Static
 import Linear
 
 import Color
+import Util
 
 type Star = (V3 Double, (Int, Double, Double))
 type StarTree = KdMap Double (V3 Double) (Int, Double, Double)
@@ -68,31 +68,21 @@ starColor _   = (0, 0)
 raDecToCartesian :: Double -> Double -> V3 Double
 raDecToCartesian ra dec = V3 (cos dec*cos ra) (cos dec*sin ra) (sin dec)
 
-readSafe :: FilePath -> IO (Either String B.ByteString)
-readSafe path = do
-    exists <- doesFileExist path
-    if exists then Right <$> B.readFile path
-              else return . Left $ "Error: file " ++ path
-                  ++ " doesn't exist.\n"
-
 readMapFromFile :: FilePath -> IO (Either String [StoredStar])
 readMapFromFile path = do
     ebs <- readSafe path
     return $ ebs >>= runGet readMap
 
-readTreeFromFile :: FilePath -> IO (Either String StoredStarTree)
+readTreeFromFile :: FilePath -> IO (Either String StarTree)
 readTreeFromFile path = do
     ebs <- readSafe path
-    return $ decode =<< ebs
+    return $ fmap starColor' <$> (decode =<< ebs)
 
 treeToByteString :: StoredStarTree -> B.ByteString
 treeToByteString = encode
 
 buildStarTree :: [StoredStar] -> StoredStarTree
 buildStarTree = build v3AsList
-
-convertTree :: StoredStarTree -> StarTree
-convertTree = fmap starColor'
 
 v3AsList :: V3 Double -> [Double]
 v3AsList (V3 !x !y !z) = [x, y, z]

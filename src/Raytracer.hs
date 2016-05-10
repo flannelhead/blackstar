@@ -28,8 +28,9 @@ generateRay scn (Z :. y' :. x') = (vel, pos)
                       (fov cam * (0.5 - fromIntegral y' / h) * h/w)
                       (-1)
 
-render :: Scene -> StarTree -> RGBImageDelayed
-render scn startree = if supersampling scn then supersample img else img
+render :: Scene -> StarTree -> IO RGBImage
+render scn startree = R.computeUnboxedP
+    $ if supersampling scn then supersample img else img
     where img = R.fromFunction (ix2 h' w') (traceRay scn' startree)
           cam = camera scn
           (w, h) = resolution cam
