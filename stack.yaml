@@ -15,6 +15,9 @@ setup-info:
     linux64:
       8.0.0.20160421:
         url: https://downloads.haskell.org/~ghc/8.0.1-rc4/ghc-8.0.0.20160421-x86_64-unknown-linux.tar.xz
+    windows64:
+      8.0.0.20160421:
+        url: https://downloads.haskell.org/~ghc/8.0.1-rc4/ghc-8.0.0.20160421-x86_64-unknown-mingw32.tar.xz
     macosx:
       8.0.0.20160421:
         url: https://downloads.haskell.org/~ghc/8.0.1-rc4/ghc-8.0.0.20160421-x86_64-apple-darwin.tar.xz
