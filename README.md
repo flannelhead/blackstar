@@ -30,6 +30,18 @@ It will take a while to build all the dependencies. Currently, the package is me
 
 This repository includes a star lookup tree (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt tree in binary form is included for convenience, but you can also build it yourself. First, remove `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-tree PPM stars.kdt` and the tree will be generated and saved.
 
+### Speeding it up with LLVM
+When doing large or batch renders, it is recommended to build `blackstar` using GHC's LLVM backend. GHC produces LLVM bytecode and LLVM produces fast native code from GHC's output. In my tests I've noticed ~1.5x speedups.
+
+The LLVM backend isn't used by default since one needs to install (and usually build) a specific version of LLVM separately. Moreover, the build time is significantly higher with LLVM, so one doesn't definitely want to use it while hacking on the code.
+
+To successfully build with LLVM, you need to:
+
+* Download and [build](http://llvm.org/docs/GettingStarted.html#getting-started-quickly-a-summary) [LLVM 3.7.1](http://llvm.org/releases/download.html#3.7.1). You can skip the Clang parts. After the build, you should make sure the tools `llc` and `opt` are found in your `PATH`. Notice that these aren't included in the prebuilt LLVM binaries, that's why you'll need to build it.
+* Build `blackstar` with `stack build --ghc-options -fllvm`.
+* Wait patiently
+* Enjoy the result!
+
 ## Usage
 When `blackstar` has been built with `stack`, you can run it with
 ```
