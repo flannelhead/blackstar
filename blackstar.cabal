@@ -21,7 +21,7 @@ library
                      , ConfigFile
                      , ImageFilters
                      , Util
-  ghc-options:         -Wall -Odph -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields
+  ghc-options:         -Wall -Odph -fno-liberate-case -fexcess-precision -funbox-strict-fields -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math
   build-depends:       base >= 4.7 && < 5
                      , linear
                      , lens
@@ -41,7 +41,7 @@ library
 executable blackstar
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -Wall -Odph -rtsopts -threaded -fno-liberate-case -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math -fexcess-precision -funbox-strict-fields -with-rtsopts=-N
+  ghc-options:         -Wall -rtsopts -threaded -with-rtsopts=-N
   build-depends:       base
                      , blackstar
                      , directory
@@ -54,7 +54,7 @@ executable blackstar
 executable animate
   hs-source-dirs:      app
   main-is:             Animate.hs
-  ghc-options:         -Wall -rtsopts -threaded -with-rtsopts=-N
+  ghc-options:         -Wall
   build-depends:       base
                      , blackstar
                      , directory
@@ -67,7 +67,7 @@ executable animate
 executable generate-tree
   hs-source-dirs:      app
   main-is:             GenerateTree.hs
-  ghc-options:         -Wall -rtsopts -threaded -with-rtsopts=-N
+  ghc-options:         -Wall
   build-depends:       base
                      , blackstar
                      , directory

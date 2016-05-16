@@ -6,10 +6,10 @@ module Main where
 import System.Directory
 import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
-import Control.Monad (unless, when)
+import Control.Monad (unless, when, forM_)
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import System.Console.CmdArgs
-import System.FilePath (takeBaseName)
+import System.FilePath (takeBaseName, takeExtension, (</>), (<.>))
 
 import Raytracer
 import StarMap
@@ -46,20 +46,38 @@ main = do
     cmdline <- cmdArgs argparser
     etree <- readTreeFromFile $ starmap cmdline
     case etree of
-        Right tree -> doStart cmdline tree
+        Right tree -> putStrLn "Starmap successfully read."
+            >> doStart cmdline tree
         Left  err  -> putStrLn $ "Error decoding star tree: \n" ++ err
 
 doStart :: Blackstar -> StarTree -> IO ()
 doStart cmdline tree = do
-    filename <- normalizePath $ inputfile cmdline
-    let pvw = preview cmdline
-    let sceneName = takeBaseName filename
+    -- Resolve the output directory
     when (output cmdline /= "")
         $ createDirectoryIfMissing True (output cmdline)
     outdir <- normalizePath =<< case output cmdline of
                   "" -> getCurrentDirectory
                   x  -> return x
-    putStrLn $ "Reading " ++ filename ++ "..."
+    createDirectoryIfMissing True outdir
+    -- Resolve the input file or directory
+    filename <- normalizePath $ inputfile cmdline
+    isDir <- doesDirectoryExist filename
+    if isDir then do
+            putStrLn $ filename
+                ++ " is a directory. Rendering all scenes inside it..."
+
+            inputFiles <- map (filename </>)
+                . filter (\f -> takeExtension f == ".yaml")
+                <$> listDirectory filename
+
+            forM_ inputFiles $ handleScene cmdline tree outdir
+        else handleScene cmdline tree outdir filename
+
+handleScene :: Blackstar -> StarTree -> String -> String -> IO ()
+handleScene cmdline tree outdir filename = do
+    let pvw = preview cmdline
+    let sceneName = takeBaseName filename
+    putStrLn $ "\nReading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
     let sceneName' = if pvw then sceneName ++ "-preview" else sceneName
     case cfg of
@@ -79,20 +97,18 @@ prepareScene scn doPreview = let
 doRender :: Blackstar -> Scene -> StarTree -> String -> String -> IO ()
 doRender cmdline scn tree sceneName outdir = do
     let doWrite = if force cmdline then BL.writeFile else promptOverwriteFile
-    putStrLn "Rendering..."
+    putStrLn $ "Rendering " ++ sceneName ++ "..."
     img <- timeAction "Rendering" $ render scn tree
 
-    outName <- normalizePath $ outdir ++ "/" ++ sceneName ++ ".png"
+    let outName = outdir </> sceneName <.> ".png"
     putStrLn $ "Saving to " ++ outName ++ "..."
-    doesDirectoryExist "output" >>= (`unless` createDirectory "output")
     doWrite outName $ pngByteString img
 
     when (bloomStrength scn /= 0) $ do
         putStrLn "Applying bloom..."
         bloomed <- timeAction "Bloom"
             $ bloom (bloomStrength scn) (bloomDivider scn) img
-        bloomName <- normalizePath
-            $ outdir ++ "/" ++ sceneName ++ "-bloomed.png"
+        let bloomName = outdir </> (sceneName ++ "-bloomed") <.> ".png"
         putStrLn $ "Saving to " ++ bloomName ++ "..."
         doWrite bloomName $ pngByteString bloomed
 

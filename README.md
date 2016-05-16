@@ -64,6 +64,8 @@ in the root directory of the project. The `--output` flag specifies the output d
 
 The rendered files are named `scenename.png` and `scenename-bloomed.png`. The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters. The `--force` flag will cause `blackstar` to overwrite output images without a prompt.
 
+If a directory is given as the input scene path, `blackstar` searches non-recursively for YAML files in that directory and tries to render them. The scenes are placed in the specified output directory.
+
 There's also a help text which can be seen by running
 ```
 stack exec blackstar -- --help
