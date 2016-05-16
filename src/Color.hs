@@ -47,6 +47,7 @@ pngByteString :: RGBImage -> B.ByteString
 pngByteString img = imageToPng $ rgbImageToImage img
 
 hsvToRGB :: HSV -> RGB
+{-# INLINE hsvToRGB #-}
 hsvToRGB (h, s, v) = let
     c = v * s
     h' = h / 60
@@ -67,6 +68,7 @@ addAlpha :: RGB -> Double -> RGBA
 addAlpha (r, g, b) a = (r, g, b, a)
 
 dropAlpha :: RGBA -> RGB
+{-# INLINE dropAlpha #-}
 dropAlpha (r, g, b, _) = (r, g, b)
 
 blend :: RGBA -> RGBA -> RGBA
