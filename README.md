@@ -38,7 +38,7 @@ The LLVM backend isn't used by default since one needs to install (and usually b
 To successfully build with LLVM, you need to:
 
 * Download and [build](http://llvm.org/docs/GettingStarted.html#getting-started-quickly-a-summary) [LLVM 3.7.1](http://llvm.org/releases/download.html#3.7.1). You can skip the Clang parts. After the build, you should make sure the tools `llc` and `opt` are found in your `PATH`. Notice that these aren't included in the prebuilt LLVM binaries, that's why you'll need to build it.
-* Build `blackstar` with `stack build --ghc-options -fllvm`.
+* Build `blackstar` with `stack build --ghc-options -fllvm`. (If you've just built it, run `stack clean` first to ensure it really gets rebuilt with LLVM.)
 * Wait patiently
 * Enjoy the result!
 
