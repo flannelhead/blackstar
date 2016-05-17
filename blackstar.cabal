@@ -21,7 +21,7 @@ library
                      , ConfigFile
                      , ImageFilters
                      , Util
-  ghc-options:         -Wall -Odph -fno-liberate-case -fexcess-precision -funbox-strict-fields -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -optc-O3 -optc-ffast-math
+  ghc-options:         -Wall -Odph -fno-liberate-case -fexcess-precision -funbox-strict-fields -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3
   build-depends:       base >= 4.7 && < 5
                      , linear
                      , lens
