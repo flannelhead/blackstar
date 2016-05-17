@@ -14,6 +14,20 @@ ix1d :: Int -> Int -> Int -> Int
 {-# INLINE ix1d #-}
 ix1d !w !y !x = y*w + x
 
+add :: (Double, Double, Double) -> (Double, Double, Double)
+       -> (Double, Double, Double)
+{-# INLINE add #-}
+add (!r, !g, !b) (!r', !g', !b') = (r+r', g+g', b+b')
+
+sub :: (Double, Double, Double) -> (Double, Double, Double)
+       -> (Double, Double, Double)
+{-# INLINE sub #-}
+sub (!r, !g, !b) (!r', !g', !b') = (r-r', g-g', b-b')
+
+mul :: Double -> (Double, Double, Double) -> (Double, Double, Double)
+{-# INLINE mul #-}
+mul a (!r, !g, !b) = (a*r, a*g, a*b)
+
 boxBlur :: Int -> Int -> RGBImage -> IO RGBImage
 boxBlur !r !passes !img = let
     !sh@(Z :. h :. w) = R.extent img
@@ -45,11 +59,11 @@ boxBlur !r !passes !img = let
         -- A function to yield a pixel from the image vector
         pix = readf vecIn y
         -- Starting value
-        startVal = U.foldl1' addRGB . U.map pix . U.unsafeTake r $ crds
+        startVal = U.foldl1' add . U.map pix . U.unsafeTake r $ crds
         {-# INLINE accumulate #-}
         accumulate !rgb !x = do
-            let newRGB =  (rgb `addRGB` pix (x+r)) `subRGB` pix (x-r)
-            _ <- writeToVec (ix1df y x) $ mulRGB normFactor newRGB
+            let newRGB =  (rgb `add` pix (x+r)) `sub` pix (x-r)
+            _ <- writeToVec (ix1df y x) $ mul normFactor newRGB
             return newRGB
         -- Sweep over the row / col of the image
         in U.foldM'_ accumulate startVal crds
@@ -72,8 +86,8 @@ bloom strength divider img = do
     let sh@(Z :. _ :. w) = R.extent img
     blurred <- boxBlur (w `div` divider) 3 img
     R.computeUnboxedP . R.fromFunction sh
-        $ \ix -> img `R.unsafeIndex` ix `addRGB`
-                 mulRGB strength (blurred `R.unsafeIndex` ix)
+        $ \ix -> img `R.unsafeIndex` ix `add`
+                 mul strength (blurred `R.unsafeIndex` ix)
 
 supersample :: RGBImageDelayed -> RGBImageDelayed
 supersample img = let
@@ -81,7 +95,7 @@ supersample img = let
     {-# INLINE pix #-}
     pix y x = img `R.unsafeIndex` ix2 y x
     {-# INLINE f #-}
-    f (Z :. y :. x) = mulRGB 0.25
-        $ pix (2*y) (2*x) `addRGB` pix (2*y+1) (2*x) `addRGB` pix (2*y) (2*x+1)
-                          `addRGB` pix (2*y+1) (2*x+1)
+    f (Z :. y :. x) = mul 0.25
+        $ pix (2*y) (2*x) `add` pix (2*y+1) (2*x) `add` pix (2*y) (2*x+1)
+                          `add` pix (2*y+1) (2*x+1)
     in R.fromFunction (ix2 (h `div` 2) (w `div` 2)) f

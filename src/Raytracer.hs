@@ -39,30 +39,30 @@ render scn startree = R.computeUnboxedP
                            max (50^(2 :: Int)) (2 * sqrnorm (position cam))
                      , diskInner = diskInner scn ^ (2 :: Int)
                      , diskOuter = diskOuter scn ^ (2 :: Int)
-                     , diskColor = hsvToRGB $ diskColor scn
+                     , diskColor = diskColor scn
                      , camera = cam { resolution = res } }
 
-traceRay :: Scene -> StarTree -> DIM2 -> RGB
+traceRay :: Scene -> StarTree -> DIM2 -> (Double, Double, Double)
 traceRay scn startree pt = let
         ray@(vel, pos) = generateRay scn pt
         h2 = sqrnorm $ pos `cross` vel
-    in dropAlpha . colorize scn startree h2 $ ray
+    in toTuple . dropAlpha . colorize scn startree h2 $ ray
 
 colorize :: Scene -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
-colorize scn startree !h2 !crd = let
-    colorize' !rgba !crd' = let
+colorize scn startree h2 crd = let
+    colorize' rgba crd' = let
         newCrd = rk4 (stepSize scn) h2 crd'
         in case findColor scn startree crd' newCrd of
             Layer rgba' -> colorize' (blend rgba rgba') newCrd
             Bottom rgba' -> blend rgba rgba'
             None -> colorize' rgba newCrd
-    in colorize' (0, 0, 0, 0) crd
+    in colorize' (RGBA 0 0 0 0) crd
 
 findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
 {-# INLINE findColor #-}
-findColor scn startree (!vel, pos@(V3 _ !y _)) (_, newPos@(V3 _ !y' _))
-    | r2 < 1 = Bottom (0, 0, 0, 1)  -- already passed the event horizon
+findColor scn startree (vel, pos@(V3 _ y _)) (_, newPos@(V3 _ y' _))
+    | r2 < 1 = Bottom (RGBA 0 0 0 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
     | diskOpacity scn /= 0 && signum y' /= signum y
@@ -83,7 +83,7 @@ diskColor' scn !r = let
 
 rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
 {-# INLINE rk4 #-}
-rk4 !h !h2 !y = y `add`
+rk4 !h !h2 y = y `add`
     ((k1 `add` (k2 `mul` 2) `add` (k3 `mul` 2) `add` k4) `mul` (h/6))
     where k1 = f y
           k2 = f (y `add` (k1 `mul` (h/2)))
@@ -91,8 +91,8 @@ rk4 !h !h2 !y = y `add`
           k4 = f (y `add` (k3 `mul` h))
 
           {-# INLINE mul #-}
-          mul (!u, !v) !a = (u ^* a, v ^* a)
+          mul (u, v) !a = (u ^* a, v ^* a)
           {-# INLINE add #-}
-          add (!x, !z) (!u, !v) = (x ^+^ u, z ^+^ v)
+          add (x, z) (u, v) = (x ^+^ u, z ^+^ v)
           {-# INLINE f #-}
-          f (!vel, !pos) = (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos, vel)
+          f (vel, pos) = (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos, vel)

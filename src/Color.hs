@@ -1,12 +1,11 @@
-{-# LANGUAGE Strict #-}
-
 module Color
-    ( RGB
-    , RGBA
-    , HSV
+    ( RGB(RGB)
+    , RGBA(RGBA)
+    , HSV(HSV)
     , RGBImage
     , RGBImageDelayed
     , pngByteString
+    , toTuple
     , addAlpha
     , dropAlpha
     , blend
@@ -25,12 +24,12 @@ import Data.Fixed (mod')
 import Codec.Picture.Types
 import Codec.Picture.Saving
 
-type RGBImage = R.Array R.U DIM2 RGB
-type RGBImageDelayed = R.Array R.D DIM2 RGB
+type RGBImage = R.Array R.U DIM2 (Double, Double, Double)
+type RGBImageDelayed = R.Array R.D DIM2 (Double, Double, Double)
 
-type RGBA = (Double, Double, Double, Double)
-type RGB = (Double, Double, Double)
-type HSV = (Double, Double, Double)
+data RGBA = RGBA !Double !Double !Double !Double
+data RGB = RGB !Double !Double !Double
+data HSV = HSV !Double !Double !Double
 
 rgbImageToImage :: RGBImage -> DynamicImage
 rgbImageToImage img = let
@@ -46,9 +45,13 @@ rgbImageToImage img = let
 pngByteString :: RGBImage -> B.ByteString
 pngByteString img = imageToPng $ rgbImageToImage img
 
+toTuple :: RGB -> (Double, Double, Double)
+{-# INLINE toTuple #-}
+toTuple (RGB r g b) = (r, g, b)
+
 hsvToRGB :: HSV -> RGB
 {-# INLINE hsvToRGB #-}
-hsvToRGB (h, s, v) = let
+hsvToRGB (HSV h s v) = let
     c = v * s
     h' = h / 60
     x = c * (1 - abs ((h' `mod'` 2) - 1))
@@ -61,31 +64,31 @@ hsvToRGB (h, s, v) = let
             | h'' < 6 = (c, 0, x)
             | otherwise = (0, 0, 0)
     (r, g, b) = rgb h'
-    in (r + m, g + m, b + m)
+    in RGB (r + m) (g + m) (b + m)
 
 addAlpha :: RGB -> Double -> RGBA
 {-# INLINE addAlpha #-}
-addAlpha (r, g, b) a = (r, g, b, a)
+addAlpha (RGB r g b) = RGBA r g b
 
 dropAlpha :: RGBA -> RGB
 {-# INLINE dropAlpha #-}
-dropAlpha (r, g, b, _) = (r, g, b)
+dropAlpha (RGBA r g b _) = RGB r g b
 
 blend :: RGBA -> RGBA -> RGBA
 {-# INLINE blend #-}
-blend (tr, tg, tb, ta) (br, bg, bb, ba) = let
+blend (RGBA tr tg tb ta) (RGBA br bg bb ba) = let
         a = ta + ba * (1 - ta)
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
-    in (comp tr br, comp tg bg, comp tb bb, a)
+    in RGBA (comp tr br) (comp tg bg) (comp tb bb) a
 
 addRGB :: RGB -> RGB -> RGB
 {-# INLINE addRGB #-}
-addRGB (r, g, b) (r', g', b') = (r+r', g+g', b+b')
+addRGB (RGB r g b) (RGB r' g' b') = RGB (r+r') (g+g') (b+b')
 
 subRGB :: RGB -> RGB -> RGB
 {-# INLINE subRGB #-}
-subRGB (r, g, b) (r', g', b') = (r-r', g-g', b-b')
+subRGB (RGB r g b) (RGB r' g' b') = RGB (r-r') (g-g') (b-b')
 
 mulRGB :: Double -> RGB -> RGB
 {-# INLINE mulRGB #-}
-mulRGB a (r, g, b) = (a*r, a*g, a*b)
+mulRGB a (RGB r g b) = RGB (a*r) (a*g) (a*b)

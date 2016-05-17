@@ -85,15 +85,15 @@ buildStarTree :: [StoredStar] -> StoredStarTree
 buildStarTree = build v3AsList
 
 v3AsList :: V3 Double -> [Double]
-v3AsList (V3 !x !y !z) = [x, y, z]
+v3AsList (V3 x y z) = [x, y, z]
 
 sqrnorm :: V3 Double -> Double
 {-# INLINE sqrnorm #-}
-sqrnorm (V3 !x !y !z) = x*x + y*y + z*z
+sqrnorm (V3 x y z) = x*x + y*y + z*z
 
 starLookup :: StarTree -> Double -> Double -> V3 Double -> RGBA
 {-# INLINE starLookup #-}
-starLookup !starmap !intensity !saturation !vel = let
+starLookup starmap !intensity !saturation vel = let
         -- The magnitude value tells about the intensity of the star. The
         -- brighter the star, the smaller the magnitude. These constants are
         -- used for adjusting the dynamics of the rendered celestial sphere.
@@ -118,5 +118,5 @@ starLookup !starmap !intensity !saturation !vel = let
         a = log 2 / (m0 - m1)
         val = (* intensity) . min 1
               . exp $ a*(m2 - fromIntegral mag) - d2/(2*w^(2 :: Int))
-    in if d2 < r*r then addAlpha (hsvToRGB (hue, saturation * sat, val)) 1
-                   else (0, 0, 0, 1)
+    in if d2 < r*r then addAlpha (hsvToRGB (HSV hue (saturation * sat) val)) 1
+                   else RGBA 0 0 0 1

@@ -10,7 +10,7 @@ import Data.Yaml
 import Data.Aeson.Types
 import Linear
 
-import Color (RGB)
+import Color (RGB(RGB), HSV(HSV), hsvToRGB)
 
 data Scene = Scene { safeDistance :: !Double
                    , stepSize :: !Double
@@ -36,6 +36,11 @@ instance FromJSON (V3 Double) where
         [x, y, z] <- parseJSON vec
         return $ V3 x y z
 
+instance FromJSON RGB where
+    parseJSON rgb = do
+        [x, y, z] <- parseJSON rgb
+        return . hsvToRGB $ HSV x y z
+
 instance FromJSON Camera where
     parseJSON (Object v) = Camera            <$>
                            v .: "position"   <*>
@@ -55,7 +60,7 @@ instance FromJSON Scene where
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskHSV"
-                             .!= (60, 0.1, 0.95)          <*>
+                             .!= RGB 0.95 0.95 0.85       <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>
