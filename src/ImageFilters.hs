@@ -29,8 +29,8 @@ mul :: Double -> (Double, Double, Double) -> (Double, Double, Double)
 mul a (!r, !g, !b) = (a*r, a*g, a*b)
 
 boxBlur :: Int -> Int -> RGBImage -> IO RGBImage
-boxBlur !r !passes !img = let
-    !sh@(Z :. h :. w) = R.extent img
+boxBlur !r !passes img = let
+    sh@(Z :. h :. w) = R.extent img
     rows = U.enumFromN (0 :: Int) h
     cols = U.enumFromN (0 :: Int) w
 
@@ -41,10 +41,10 @@ boxBlur !r !passes !img = let
     {-# INLINE ixv #-}
     {-# INLINE ix1d' #-}
     ix1d' = ix1d w
-    ixh !v !y !x
+    ixh v y x
         | x < 0 || x >= w = (0, 0, 0)
         | otherwise = U.unsafeIndex v $ ix1d' y x
-    ixv !v !x !y
+    ixv v x y
         | y < 0 || y >= h = (0, 0, 0)
         | otherwise = U.unsafeIndex v $ ix1d' y x
 
@@ -54,14 +54,14 @@ boxBlur !r !passes !img = let
     normFactor = 1 / (2*fromIntegral r + 1)
 
     {-# INLINE blur #-}
-    blur !writeToVec !crds !ix1df !readf !vecIn !y = let
+    blur writeToVec crds ix1df readf vecIn y = let
         {-# INLINE pix #-}
         -- A function to yield a pixel from the image vector
         pix = readf vecIn y
         -- Starting value
         startVal = U.foldl1' add . U.map pix . U.unsafeTake r $ crds
         {-# INLINE accumulate #-}
-        accumulate !rgb !x = do
+        accumulate !rgb x = do
             let newRGB =  (rgb `add` pix (x+r)) `sub` pix (x-r)
             _ <- writeToVec (ix1df y x) $ mul normFactor newRGB
             return newRGB
