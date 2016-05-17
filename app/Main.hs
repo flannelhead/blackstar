@@ -4,9 +4,8 @@
 module Main where
 
 import System.Directory
-import qualified Data.ByteString as B
 import qualified Data.ByteString.Lazy as BL
-import Control.Monad (unless, when, forM_)
+import Control.Monad (when, forM_)
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import System.Console.CmdArgs
 import System.FilePath (takeBaseName, takeExtension, (</>), (<.>))
@@ -68,7 +67,7 @@ doStart cmdline tree = do
 
             inputFiles <- map (filename </>)
                 . filter (\f -> takeExtension f == ".yaml")
-                <$> listDirectory filename
+                <$> getDirectoryContents filename
 
             forM_ inputFiles $ handleScene cmdline tree outdir
         else handleScene cmdline tree outdir filename
