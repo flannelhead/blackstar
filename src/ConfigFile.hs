@@ -7,7 +7,6 @@ module ConfigFile
            , diskColor, diskOpacity, diskInner, diskOuter )
     , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
 
-import Data.Yaml
 import Data.Aeson.Types
 import Linear
 
