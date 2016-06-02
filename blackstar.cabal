@@ -21,6 +21,7 @@ library
                      , ConfigFile
                      , ImageFilters
                      , Util
+                     , Animation
   ghc-options:         -Wall -fno-warn-orphans -Odph -fno-liberate-case -fexcess-precision -funbox-strict-fields -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3
   build-depends:       base >= 4.7 && < 5
                      , linear
