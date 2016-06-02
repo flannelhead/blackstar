@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module StarMap
     ( Star, StarTree, StoredStarTree

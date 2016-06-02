@@ -1,4 +1,5 @@
 {-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ConfigFile
     ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength, bloomDivider
