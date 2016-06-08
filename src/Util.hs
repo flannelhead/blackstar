@@ -1,5 +1,5 @@
 module Util ( promptOverwriteFile, readSafe, normalizePath
-            , timeAction ) where
+            , timeAction, padZero ) where
 
 import System.Directory
 import System.IO
@@ -39,3 +39,10 @@ timeAction actionName action = do
     putStrLn $ actionName ++ " completed in " ++ show (secs `div` 60)
         ++ " min " ++ show (secs `rem` 60) ++ " sec."
     return res
+
+padZero :: Int -> Int -> String
+padZero maxVal val = let
+    nDigits x = (floor . logBase 10 $ (fromIntegral x :: Double)) + 1
+    nZeros = nDigits maxVal - nDigits val
+    zeros = replicate nZeros '0'
+    in zeros ++ show val

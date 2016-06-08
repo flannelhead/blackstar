@@ -22,7 +22,7 @@ library
                      , ImageFilters
                      , Util
                      , Animation
-  ghc-options:         -Wall -fno-warn-orphans -Odph -fno-liberate-case -fexcess-precision -funbox-strict-fields -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3
+  ghc-options:         -Wall -fno-warn-orphans -Odph -fno-liberate-case -fexcess-precision -funbox-strict-fields -funfolding-use-threshold1000 -funfolding-keeness-factor1000 -optlo-O3 -fllvm
   build-depends:       base >= 4.7 && < 5
                      , linear
                      , lens
@@ -59,10 +59,10 @@ executable animate
   build-depends:       base
                      , blackstar
                      , directory
-                     , linear
                      , yaml
                      , bytestring
                      , cmdargs
+                     , filepath
   default-language:    Haskell2010
 
 executable generate-tree

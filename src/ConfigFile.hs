@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings, FlexibleInstances, DeriveGeneric #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ConfigFile
@@ -9,8 +9,9 @@ module ConfigFile
 
 import Data.Aeson.Types
 import Linear
+import GHC.Generics
 
-import Color (RGB(RGB), HSV(HSV), hsvToRGB)
+import Color (HSV(HSV))
 
 data Scene = Scene { safeDistance :: !Double
                    , stepSize :: !Double
@@ -19,37 +20,40 @@ data Scene = Scene { safeDistance :: !Double
                    , bloomDivider :: !Int
                    , starIntensity :: !Double
                    , starSaturation :: !Double
-                   , diskColor :: !RGB
+                   , diskColor :: !HSV
                    , diskOpacity :: !Double
                    , diskInner :: !Double
                    , diskOuter :: !Double
                    , supersampling :: !Bool }
+                   deriving (Generic)
 
 data Camera = Camera { position :: !(V3 Double)
                      , lookAt :: !(V3 Double)
                      , upVec :: !(V3 Double)
                      , fov :: !Double
                      , resolution :: !(Int, Int) }
+                     deriving (Generic)
 
 instance FromJSON (V3 Double) where
     parseJSON vec = do
         [x, y, z] <- parseJSON vec
         return $ V3 x y z
 
-instance FromJSON RGB where
-    parseJSON rgb = do
-        [x, y, z] <- parseJSON rgb
-        return . hsvToRGB $ HSV x y z
+instance ToJSON (V3 Double) where
+    toJSON (V3 x y z) = toJSON [x, y, z]
 
-instance FromJSON Camera where
-    parseJSON (Object v) = Camera            <$>
-                           v .: "position"   <*>
-                           v .: "lookAt"     <*>
-                           v .: "upVec"      <*>
-                           v .: "fov"        <*>
-                           v .: "resolution"
+instance FromJSON HSV where
+    parseJSON hsv = do
+        [x, y, z] <- parseJSON hsv
+        return $ HSV x y z
 
-    parseJSON invalid = typeMismatch "Camera" invalid
+instance ToJSON HSV where
+    toJSON (HSV h s v) = toJSON [h, s, v]
+
+instance FromJSON Camera
+
+instance ToJSON Camera where
+    toEncoding = genericToEncoding defaultOptions
 
 instance FromJSON Scene where
     parseJSON (Object v) = Scene 0                        <$>
@@ -60,10 +64,13 @@ instance FromJSON Scene where
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskHSV"
-                             .!= RGB 0.95 0.95 0.85       <*>
+                             .!= HSV 60 0.1 0.95          <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>
                            v .:? "supersampling"  .!= False
 
     parseJSON invalid = typeMismatch "Object" invalid
+
+instance ToJSON Scene where
+    toEncoding = genericToEncoding defaultOptions

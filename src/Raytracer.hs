@@ -31,7 +31,7 @@ generateRay scn (Z :. y' :. x') = (vel, pos)
 render :: Scene -> StarTree -> IO RGBImage
 render scn startree = R.computeUnboxedP
     $ if supersampling scn then supersample img else img
-    where img = R.fromFunction (ix2 h' w') (traceRay scn' startree)
+    where img = R.fromFunction (ix2 h' w') (traceRay scn' diskRGB startree)
           cam = camera scn
           (w, h) = resolution cam
           res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
@@ -39,47 +39,47 @@ render scn startree = R.computeUnboxedP
                            max (50^(2 :: Int)) (2 * sqrnorm (position cam))
                      , diskInner = diskInner scn ^ (2 :: Int)
                      , diskOuter = diskOuter scn ^ (2 :: Int)
-                     , diskColor = diskColor scn
                      , camera = cam { resolution = res } }
+          diskRGB = hsvToRGB $ diskColor scn
 
-traceRay :: Scene -> StarTree -> DIM2 -> (Double, Double, Double)
-traceRay scn startree pt = let
+traceRay :: Scene -> RGB -> StarTree -> DIM2 -> (Double, Double, Double)
+traceRay scn diskRGB startree pt = let
         ray@(vel, pos) = generateRay scn pt
         h2 = sqrnorm $ pos `cross` vel
-    in toTuple . dropAlpha . colorize scn startree h2 $ ray
+    in toTuple . dropAlpha . colorize scn diskRGB startree h2 $ ray
 
-colorize :: Scene -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
-colorize scn startree h2 crd = let
+colorize :: Scene -> RGB -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
+colorize scn diskRGB startree h2 crd = let
     colorize' rgba crd' = let
         newCrd = rk4 (stepSize scn) h2 crd'
-        in case findColor scn startree crd' newCrd of
+        in case findColor scn diskRGB startree crd' newCrd of
             Layer rgba' -> colorize' (blend rgba rgba') newCrd
             Bottom rgba' -> blend rgba rgba'
             None -> colorize' rgba newCrd
     in colorize' (RGBA 0 0 0 0) crd
 
-findColor :: Scene -> StarTree -> (V3 Double, V3 Double)
+findColor :: Scene -> RGB -> StarTree -> (V3 Double, V3 Double)
              -> (V3 Double, V3 Double) -> Layer
 {-# INLINE findColor #-}
-findColor scn startree (vel, pos@(V3 _ y _)) (_, newPos@(V3 _ y' _))
+findColor scn diskRGB startree (vel, pos@(V3 _ y _)) (_, newPos@(V3 _ y' _))
     | r2 < 1 = Bottom (RGBA 0 0 0 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
     | diskOpacity scn /= 0 && signum y' /= signum y
         && r2ave > diskInner scn && r2ave < diskOuter scn
-        = Layer $ diskColor' scn (sqrt r2ave)
+        = Layer $ diskColor' scn diskRGB (sqrt r2ave)
     | otherwise = None
     where r2 = sqrnorm pos
           r2' = sqrnorm newPos
           r2ave = (y'*r2 - y*r2') / (y' - y)
 
-diskColor' :: Scene -> Double -> RGBA
+diskColor' :: Scene -> RGB -> Double -> RGBA
 {-# INLINE diskColor' #-}
-diskColor' scn !r = let
+diskColor' scn diskRGB !r = let
         rInner = sqrt (diskInner scn)
         rOuter = sqrt (diskOuter scn)
         alpha = sin (pi * ((rOuter-r) / (rOuter-rInner))^(2 :: Int))
-    in addAlpha (diskColor scn) (alpha * diskOpacity scn)
+    in addAlpha diskRGB (alpha * diskOpacity scn)
 
 rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
 {-# INLINE rk4 #-}
