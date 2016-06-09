@@ -78,7 +78,7 @@ handleScene cmdline tree outdir filename = do
     let sceneName = takeBaseName filename
     putStrLn $ "\nReading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
-    let sceneName' = if pvw then sceneName ++ "-preview" else sceneName
+    let sceneName' = if pvw then "prev-" ++ sceneName else sceneName
     case cfg of
         Right scene -> putStrLn "Scene successfully read."
                          >> doRender cmdline (prepareScene scene pvw) tree
@@ -90,7 +90,10 @@ prepareScene scn doPreview = let
     (w, h) = resolution scn
     res = 300
     newRes = if w >= h then (res, res * h `div` w) else (res * w `div` h, res)
-    in if doPreview then scn { resolution = newRes } else scn
+    in if doPreview then scn { resolution = newRes
+                             , supersampling = False
+                             , bloomStrength = 0 }
+                    else scn
 
 doRender :: Blackstar -> Scene -> StarTree -> String -> String -> IO ()
 doRender cmdline scn tree sceneName outdir = do
@@ -106,7 +109,7 @@ doRender cmdline scn tree sceneName outdir = do
         putStrLn "Applying bloom..."
         bloomed <- timeAction "Bloom"
             $ bloom (bloomStrength scn) (bloomDivider scn) img
-        let bloomName = outdir </> (sceneName ++ "-bloomed") <.> ".png"
+        let bloomName = outdir </> ("bloom-" ++ sceneName) <.> ".png"
         putStrLn $ "Saving to " ++ bloomName ++ "..."
         doWrite bloomName $ pngByteString bloomed
 
