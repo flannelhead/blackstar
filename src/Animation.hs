@@ -37,7 +37,7 @@ instance FromJSON Animation
 
 generateFrames :: Animation -> [CF.Scene]
 generateFrames animation = let
-    stepsize = (1 :: Double) / fromIntegral (nFrames animation)
+    stepsize = (1 :: Double) / fromIntegral (nFrames animation - 1)
     -- Take the first keyframe from the scene in the config
     -- Also sort the frames by time
     frames = sortBy (comparing time)
