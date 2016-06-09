@@ -1,0 +1,33 @@
+scene:
+    camera:
+        position:   [0, 1, -20]
+        lookAt:     [2, 0, 0]
+        upVec:      [-0.2, 1, 0]
+        fov:        1.5
+        resolution: [1280, 720]
+
+    bloomStrength: 0.7
+    starIntensity: 0.7
+    starSaturation: 0.7
+    diskOpacity: 0.95
+    diskInner: 3       # The inner radius of the accretion disk
+    diskOuter: 12      # The outer radius of the accretion disk
+
+nFrames: 100
+interpolation: 'linear'
+
+keyframes:
+- time: 0.5
+  camera:
+    position:   [0, 1, -20]
+    lookAt:     [2, 0, 0]
+    upVec:      [-0.2, 1, 0]
+    fov:        2
+    resolution: [1280, 720]
+- time: 1
+  camera:
+    position:   [0, 1, -20]
+    lookAt:     [-10, 0, 0]
+    upVec:      [-0.2, 1, 0]
+    fov:        2
+    resolution: [1280, 720]
