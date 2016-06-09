@@ -89,7 +89,10 @@ The profile will be generated to `blackstar.prof`.
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Batch / animation mode [WIP]
+* Document the animator
+* Overall better documentation (wiki pages?)
+* Binary releases?
+* Preview GUI for planning scenes
 * GPU acceleration?
 * Arbitrary textures for accretion disk?
 * Redshifting of the accretion disk?
