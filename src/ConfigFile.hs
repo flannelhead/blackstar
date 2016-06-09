@@ -4,8 +4,8 @@
 module ConfigFile
     ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength, bloomDivider
            , starIntensity, starSaturation, supersampling
-           , diskColor, diskOpacity, diskInner, diskOuter )
-    , Camera( Camera, position, lookAt, upVec, fov, resolution ) ) where
+           , diskColor, diskOpacity, diskInner, diskOuter, resolution )
+    , Camera( Camera, position, lookAt, upVec, fov ) ) where
 
 import Data.Aeson.Types
 import Linear
@@ -24,14 +24,14 @@ data Scene = Scene { safeDistance :: !Double
                    , diskOpacity :: !Double
                    , diskInner :: !Double
                    , diskOuter :: !Double
+                   , resolution :: !(Int, Int)
                    , supersampling :: !Bool }
                    deriving (Generic)
 
 data Camera = Camera { position :: !(V3 Double)
                      , lookAt :: !(V3 Double)
                      , upVec :: !(V3 Double)
-                     , fov :: !Double
-                     , resolution :: !(Int, Int) }
+                     , fov :: !Double }
                      deriving (Generic)
 
 instance FromJSON (V3 Double) where
@@ -68,6 +68,7 @@ instance FromJSON Scene where
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>
+                           v .:? "resolution"     .!= (1280, 720) <*>
                            v .:? "supersampling"  .!= False
 
     parseJSON invalid = typeMismatch "Object" invalid

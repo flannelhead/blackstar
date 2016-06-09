@@ -66,8 +66,7 @@ interpolate method frames t = let
 
         cam1 = camera f1
         cam2 = camera f2
-    in CF.Camera { CF.resolution = CF.resolution cam1
-                 , CF.fov = f (*) (CF.fov cam1) (CF.fov cam2)
+    in CF.Camera { CF.fov = f (*) (CF.fov cam1) (CF.fov cam2)
                  , CF.position = f (*^) (CF.position cam1) (CF.position cam2)
                  , CF.lookAt = f (*^) (CF.lookAt cam1) (CF.lookAt cam2)
                  , CF.upVec = f (*^) (CF.upVec cam1) (CF.upVec cam2) }

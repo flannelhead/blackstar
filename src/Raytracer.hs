@@ -20,8 +20,8 @@ generateRay :: Scene -> DIM2 -> (V3 Double, V3 Double)
 generateRay scn (Z :. y' :. x') = (vel, pos)
     where cam = camera scn
           pos = position cam
-          w = fromIntegral . fst $ resolution cam
-          h = fromIntegral . snd $ resolution cam
+          w = fromIntegral . fst $ resolution scn
+          h = fromIntegral . snd $ resolution scn
           matr = L.lookAt pos (lookAt cam) (upVec cam) ^. _m33
           vel  = normalize . (transpose matr !*)
                  $ V3 (fov cam * (fromIntegral x' / w - 0.5))
@@ -33,13 +33,13 @@ render scn startree = R.computeUnboxedP
     $ if supersampling scn then supersample img else img
     where img = R.fromFunction (ix2 h' w') (traceRay scn' diskRGB startree)
           cam = camera scn
-          (w, h) = resolution cam
+          (w, h) = resolution scn
           res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
           scn' = scn { safeDistance =
                            max (50^(2 :: Int)) (2 * sqrnorm (position cam))
                      , diskInner = diskInner scn ^ (2 :: Int)
                      , diskOuter = diskOuter scn ^ (2 :: Int)
-                     , camera = cam { resolution = res } }
+                     , resolution = res }
           diskRGB = hsvToRGB $ diskColor scn
 
 traceRay :: Scene -> RGB -> StarTree -> DIM2 -> (Double, Double, Double)

@@ -5,8 +5,8 @@ camera:
     upVec:      [-0.2, 1, 0]  # The "up" direction vector which determines the
                               # orientation of the camera
     fov:        1.5           # The tangent of the view angle
-    resolution: [1280, 720]   # [width, height] of the image
 
+resolution: [1280, 720]   # [width, height] of the image
 bloomStrength: 0.7  # The strength (weight) of the bloom effect. Setting this to
                     # 0 disables it entirely
 bloomDivider: 25  # A number x such that r = image width / x is the bloom radius

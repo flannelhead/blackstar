@@ -3,8 +3,8 @@ camera:
     lookAt:     [-12, -4, 0]
     upVec:      [0.15, 1, 0]
     fov:        2
-    resolution: [1920, 1080]
 
+resolution: [1920, 1080]
 bloomStrength: 0.7
 starIntensity: 0.8
 starSaturation: 0.8
