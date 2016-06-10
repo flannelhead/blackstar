@@ -9,6 +9,7 @@ import Control.Monad (when, forM_)
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import System.Console.CmdArgs
 import System.FilePath (takeBaseName, takeExtension, (</>), (<.>))
+import Data.List (sort)
 
 import Raytracer
 import StarMap
@@ -66,7 +67,7 @@ doStart cmdline tree = do
                 ++ " is a directory. Rendering all scenes inside it..."
 
             inputFiles <- map (filename </>)
-                . filter (\f -> takeExtension f == ".yaml")
+                . sort . filter (\f -> takeExtension f == ".yaml")
                 <$> getDirectoryContents filename
 
             forM_ inputFiles $ handleScene cmdline tree outdir
@@ -102,15 +103,15 @@ doRender cmdline scn tree sceneName outdir = do
     img <- timeAction "Rendering" $ render scn tree
 
     let outName = outdir </> sceneName <.> ".png"
-    putStrLn $ "Saving to " ++ outName ++ "..."
-    doWrite outName $ pngByteString img
 
-    when (bloomStrength scn /= 0) $ do
-        putStrLn "Applying bloom..."
-        bloomed <- timeAction "Bloom"
-            $ bloom (bloomStrength scn) (bloomDivider scn) img
-        let bloomName = outdir </> ("bloom-" ++ sceneName) <.> ".png"
-        putStrLn $ "Saving to " ++ bloomName ++ "..."
-        doWrite bloomName $ pngByteString bloomed
+    final <- if bloomStrength scn /= 0
+        then do
+            putStrLn "Applying bloom..."
+            timeAction "Bloom"
+                $ bloom (bloomStrength scn) (bloomDivider scn) img
+        else return img
+
+    putStrLn $ "Saving to " ++ outName ++ "..."
+    doWrite outName $ pngByteString final
 
     putStrLn "Everything done. Thank you!"
