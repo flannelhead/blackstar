@@ -10,6 +10,7 @@ import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import System.Console.CmdArgs
 import System.FilePath (takeBaseName, takeExtension, (</>), (<.>))
 import Data.List (sort)
+import System.Console.ANSI (clearScreen, setCursorPosition)
 
 import Raytracer
 import StarMap
@@ -70,14 +71,19 @@ doStart cmdline tree = do
                 . sort . filter (\f -> takeExtension f == ".yaml")
                 <$> getDirectoryContents filename
 
-            forM_ inputFiles $ handleScene cmdline tree outdir
+            forM_ (zip inputFiles [(1 :: Int)..]) $ \(scn, idx) -> do
+                clearScreen
+                setCursorPosition 0 0
+                putStrLn $ "Batch mode progress: " ++ show idx ++ "/"
+                    ++ show (length inputFiles)
+                handleScene cmdline tree outdir scn
         else handleScene cmdline tree outdir filename
 
 handleScene :: Blackstar -> StarTree -> String -> String -> IO ()
 handleScene cmdline tree outdir filename = do
     let pvw = preview cmdline
     let sceneName = takeBaseName filename
-    putStrLn $ "\nReading " ++ filename ++ "..."
+    putStrLn $ "Reading " ++ filename ++ "..."
     cfg <- decodeFileEither filename
     let sceneName' = if pvw then "prev-" ++ sceneName else sceneName
     case cfg of

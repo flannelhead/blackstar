@@ -50,6 +50,7 @@ executable blackstar
                      , bytestring
                      , cmdargs
                      , filepath
+                     , ansi-terminal
   default-language:    Haskell2010
 
 executable animate
