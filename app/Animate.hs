@@ -44,19 +44,22 @@ main = do
     if inputExists then do
         config <- decodeFileEither inPath
         case config of
-            Right cfg -> do
-                let nFr = nFrames cfg
-                forM_ (zip (generateFrames cfg) [(0 :: Int), 1 ..])
-                    (\(frame, idx) -> do
-                        let filename = outPath </> basename ++ "_" ++
-                                padZero (nFr - 1) idx <.> ".yaml"
-                        let outBs = encode frame
+            Right cfg ->
+                case validateKeyframes $ keyframes cfg of
+                    Right () -> do
+                        let nFr = nFrames cfg
+                        forM_ (zip (generateFrames cfg) [(0 :: Int), 1 ..])
+                            (\(frame, idx) -> do
+                                let filename = outPath </> basename ++ "_" ++
+                                        padZero (nFr - 1) idx <.> ".yaml"
+                                let outBs = encode frame
 
-                        let write = if force cmdline
-                            then writeFile
-                            else promptOverwriteFile
-                        write filename $ fromStrict outBs
-                    )
+                                let write = if force cmdline
+                                    then writeFile
+                                    else promptOverwriteFile
+                                write filename $ fromStrict outBs
+                            )
+                    Left err -> putStrLn err
             Left err -> putStrLn $ "Error when decoding config:\n" ++
                                    prettyPrintParseException err
         else putStrLn "Couldn't open input file."

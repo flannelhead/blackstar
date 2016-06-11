@@ -3,7 +3,7 @@
 module Animation ( Keyframe(camera, time)
                  , Animation(scene, nFrames, interpolation, keyframes)
                  , InterpolationMethod(Linear)
-                 , generateFrames ) where
+                 , generateFrames, validateKeyframes ) where
 
 import Data.List (sortBy)
 import Data.Ord (comparing)
@@ -35,21 +35,28 @@ instance FromJSON InterpolationMethod where
 
 instance FromJSON Animation
 
-generateFrames :: Animation -> [CF.Scene]
+validateKeyframes :: [Keyframe] -> Either String ()
+validateKeyframes []  = Left "Must have at least two keyframes"
+validateKeyframes [_] = validateKeyframes []
+validateKeyframes frs = if time (head frs) == 0 && time (last frs) == 1
+    then Right ()
+    else Left "First keyframe must have time == 0, last time == 1"
+
+generateFrames :: Animation -> [CF.Config]
 generateFrames animation = let
     stepsize = (1 :: Double) / fromIntegral (nFrames animation - 1)
     -- Take the first keyframe from the scene in the config
     -- Also sort the frames by time
-    frames = sortBy (comparing time)
-        $ Keyframe (CF.camera $ scene animation) 0 : keyframes animation
+    frames = sortBy (comparing time) $ keyframes animation
     points = (* stepsize) . fromIntegral <$> [0 .. nFrames animation - 1]
     in map (makeFrame animation frames) points
 
-makeFrame :: Animation -> [Keyframe] -> Double -> CF.Scene
+makeFrame :: Animation -> [Keyframe] -> Double -> CF.Config
 makeFrame animation frames point = let
         scn = scene animation
         mtd = interpolation animation
-    in scn { CF.camera = interpolate mtd frames point }
+    in CF.Config { CF.camera = interpolate mtd frames point
+                 , CF.scene = scn }
 
 interpolate :: InterpolationMethod -> [Keyframe] -> Double -> CF.Camera
 interpolate method frames t = let

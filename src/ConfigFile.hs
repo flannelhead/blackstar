@@ -2,10 +2,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ConfigFile
-    ( Scene( Scene, safeDistance, stepSize, camera, bloomStrength, bloomDivider
+    ( Scene( Scene, safeDistance, stepSize, bloomStrength, bloomDivider
            , starIntensity, starSaturation, supersampling
            , diskColor, diskOpacity, diskInner, diskOuter, resolution )
-    , Camera( Camera, position, lookAt, upVec, fov ) ) where
+    , Camera( Camera, position, lookAt, upVec, fov )
+    , Config( Config, camera, scene ) ) where
 
 import Data.Aeson.Types
 import Linear
@@ -13,9 +14,12 @@ import GHC.Generics
 
 import Color (HSV(HSV))
 
+data Config = Config { scene :: Scene
+                     , camera :: Camera }
+                     deriving (Generic)
+
 data Scene = Scene { safeDistance :: !Double
                    , stepSize :: !Double
-                   , camera :: !Camera
                    , bloomStrength :: !Double
                    , bloomDivider :: !Int
                    , starIntensity :: !Double
@@ -50,6 +54,11 @@ instance FromJSON HSV where
 instance ToJSON HSV where
     toJSON (HSV h s v) = toJSON [h, s, v]
 
+instance FromJSON Config
+
+instance ToJSON Config where
+    toEncoding = genericToEncoding defaultOptions
+
 instance FromJSON Camera
 
 instance ToJSON Camera where
@@ -58,7 +67,6 @@ instance ToJSON Camera where
 instance FromJSON Scene where
     parseJSON (Object v) = Scene 0                        <$>
                            v .:? "stepSize"       .!= 0.3 <*>
-                           v .:  "camera"                 <*>
                            v .:? "bloomStrength"  .!= 0.4 <*>
                            v .:? "bloomDivider"   .!= 25  <*>
                            v .:? "starIntensity"  .!= 0.7 <*>

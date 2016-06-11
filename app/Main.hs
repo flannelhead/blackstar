@@ -87,26 +87,29 @@ handleScene cmdline tree outdir filename = do
     cfg <- decodeFileEither filename
     let sceneName' = if pvw then "prev-" ++ sceneName else sceneName
     case cfg of
-        Right scene -> putStrLn "Scene successfully read."
-                         >> doRender cmdline (prepareScene scene pvw) tree
-                              sceneName' outdir
-        Left  err   -> putStrLn $ prettyPrintParseException err
+        Right config -> putStrLn "Scene successfully read."
+                          >> doRender cmdline (prepareScene config pvw) tree
+                               sceneName' outdir
+        Left  err    -> putStrLn $ prettyPrintParseException err
 
-prepareScene :: Scene -> Bool -> Scene
-prepareScene scn doPreview = let
+prepareScene :: Config -> Bool -> Config
+prepareScene cfg doPreview = let
+    scn = scene cfg
     (w, h) = resolution scn
     res = 300
     newRes = if w >= h then (res, res * h `div` w) else (res * w `div` h, res)
-    in if doPreview then scn { resolution = newRes
-                             , supersampling = False
-                             , bloomStrength = 0 }
-                    else scn
+    newScn = if doPreview then scn { resolution = newRes
+                                   , supersampling = False
+                                   , bloomStrength = 0 }
+                          else scn
+    in cfg { scene = newScn }
 
-doRender :: Blackstar -> Scene -> StarTree -> String -> String -> IO ()
-doRender cmdline scn tree sceneName outdir = do
+doRender :: Blackstar -> Config -> StarTree -> String -> String -> IO ()
+doRender cmdline cfg tree sceneName outdir = do
     let doWrite = if force cmdline then BL.writeFile else promptOverwriteFile
     putStrLn $ "Rendering " ++ sceneName ++ "..."
-    img <- timeAction "Rendering" $ render scn tree
+    let scn = scene cfg
+    img <- timeAction "Rendering" $ render cfg tree
 
     let outName = outdir </> sceneName <.> ".png"
 

@@ -16,10 +16,11 @@ import ImageFilters
 data Layer = Layer RGBA | Bottom RGBA | None
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Scene -> DIM2 -> (V3 Double, V3 Double)
-generateRay scn (Z :. y' :. x') = (vel, pos)
-    where cam = camera scn
+generateRay :: Config -> DIM2 -> (V3 Double, V3 Double)
+generateRay cfg (Z :. y' :. x') = (vel, pos)
+    where cam = camera cfg
           pos = position cam
+          scn = scene cfg
           w = fromIntegral . fst $ resolution scn
           h = fromIntegral . snd $ resolution scn
           matr = L.lookAt pos (lookAt cam) (upVec cam) ^. _m33
@@ -28,24 +29,28 @@ generateRay scn (Z :. y' :. x') = (vel, pos)
                       (fov cam * (0.5 - fromIntegral y' / h) * h/w)
                       (-1)
 
-render :: Scene -> StarTree -> IO RGBImage
-render scn startree = R.computeUnboxedP
-    $ if supersampling scn then supersample img else img
-    where img = R.fromFunction (ix2 h' w') (traceRay scn' diskRGB startree)
-          cam = camera scn
-          (w, h) = resolution scn
-          res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
-          scn' = scn { safeDistance =
-                           max (50^(2 :: Int)) (2 * sqrnorm (position cam))
-                     , diskInner = diskInner scn ^ (2 :: Int)
-                     , diskOuter = diskOuter scn ^ (2 :: Int)
-                     , resolution = res }
-          diskRGB = hsvToRGB $ diskColor scn
+render :: Config -> StarTree -> IO RGBImage
+render cfg startree = let
+    scn = scene cfg
+    cam = camera cfg
+    (w, h) = resolution scn
+    res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
+    scn' = scn { safeDistance =
+                   max (50^(2 :: Int)) (2 * sqrnorm (position cam))
+               , diskInner = diskInner scn ^ (2 :: Int)
+               , diskOuter = diskOuter scn ^ (2 :: Int)
+               , resolution = res }
+    cfg' = cfg { scene = scn' }
+    diskRGB = hsvToRGB $ diskColor scn
+    img = R.fromFunction (ix2 h' w') (traceRay cfg' diskRGB startree)
+    in R.computeUnboxedP $ if supersampling scn then supersample img else img
 
-traceRay :: Scene -> RGB -> StarTree -> DIM2 -> (Double, Double, Double)
-traceRay scn diskRGB startree pt = let
-        ray@(vel, pos) = generateRay scn pt
+
+traceRay :: Config -> RGB -> StarTree -> DIM2 -> (Double, Double, Double)
+traceRay cfg diskRGB startree pt = let
+        ray@(vel, pos) = generateRay cfg pt
         h2 = sqrnorm $ pos `cross` vel
+        scn = scene cfg
     in toTuple . dropAlpha . colorize scn diskRGB startree h2 $ ray
 
 colorize :: Scene -> RGB -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
