@@ -38,7 +38,9 @@ main = do
     let basename = takeBaseName inPath
     inputExists <- doesFileExist inPath
 
-    outPath <- normalizePath $ output cmdline
+    outPath <- normalizePath =<< case output cmdline of
+                  "" -> getCurrentDirectory
+                  x  -> return x
     createDirectoryIfMissing True outPath
 
     if inputExists then do
