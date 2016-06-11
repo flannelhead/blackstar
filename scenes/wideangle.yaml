@@ -4,9 +4,10 @@ camera:
     upVec:      [0, 1, 0]
     fov:        2
 
-resolution: [1920, 1020]
-bloomStrength: 0.3
-starIntensity: 0.7
-starSaturation: 0.7
-diskOpacity: 0
-supersampling: true
+scene:
+    resolution: [1920, 1020]
+    bloomStrength: 0.3
+    starIntensity: 0.7
+    starSaturation: 0.7
+    diskOpacity: 0
+    supersampling: true

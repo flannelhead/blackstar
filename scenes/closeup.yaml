@@ -4,10 +4,11 @@ camera:
     upVec:      [0, 1, 0]
     fov:        1.2
 
-resolution: [1280, 960]
-bloomStrength: 0.7
-starIntensity: 0.7
-starSaturation: 0.7
-diskOpacity: 0.95
-diskInner: 3
-diskOuter: 9
+scene:
+    resolution: [1280, 960]
+    bloomStrength: 0.7
+    starIntensity: 0.7
+    starSaturation: 0.7
+    diskOpacity: 0.95
+    diskInner: 3
+    diskOuter: 9

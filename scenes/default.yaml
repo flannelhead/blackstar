@@ -6,22 +6,23 @@ camera:
                               # orientation of the camera
     fov:        1.5           # The tangent of the view angle
 
-resolution: [1280, 720]   # [width, height] of the image
-bloomStrength: 0.7  # The strength (weight) of the bloom effect. Setting this to
-                    # 0 disables it entirely
-bloomDivider: 25  # A number x such that r = image width / x is the bloom radius
+scene:
+    resolution: [1280, 720]   # [width, height] of the image
+    bloomStrength: 0.7  # The strength (weight) of the bloom effect. Setting this to
+                        # 0 disables it entirely
+    bloomDivider: 25  # A number x such that r = image width / x is the bloom radius
 
-starIntensity: 0.7  # The intensity (0 = black, 1 = white) of the stars
-starSaturation: 0.7  # The color saturation of the stars
+    starIntensity: 0.7  # The intensity (0 = black, 1 = white) of the stars
+    starSaturation: 0.7  # The color saturation of the stars
 
-diskOpacity: 0.95  # Opacity of the accretion disk (0 = fully transparent,
-                   # 1 = fully opaque)
-diskInner: 3       # The inner radius of the accretion disk
-diskOuter: 12      # The outer radius of the accretion disk
-diskHSV: [60, 0.1, 0.95]  # The colour of the accretion disk in the HSV space.
-                          # H: 0..360, S: 0..1, V: 0..1
+    diskOpacity: 0.95  # Opacity of the accretion disk (0 = fully transparent,
+                       # 1 = fully opaque)
+    diskInner: 3       # The inner radius of the accretion disk
+    diskOuter: 12      # The outer radius of the accretion disk
+    diskHSV: [60, 0.1, 0.95]  # The colour of the accretion disk in the HSV space.
+                              # H: 0..360, S: 0..1, V: 0..1
 
-supersampling: false  # Set this to true to enable smoothing by supersampling
-                      # a 4x sized image
-stepSize: 0.3  # The size of the timestep in the simulation. Usually this value
-               # should be fine.
+    supersampling: false  # Set this to true to enable smoothing by supersampling
+                          # a 4x sized image
+    stepSize: 0.3  # The size of the timestep in the simulation. Usually this value
+                   # should be fine.
