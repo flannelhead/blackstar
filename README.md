@@ -12,6 +12,7 @@ A black hole ray tracer written in Haskell. There's [an article](https://flannel
 * Antialiasing by 4x supersampling for smoother images
 * Easy, YAML based configuration
 * A simple CLI
+* Batch mode and sequence generator for creating animations
 
 ## What about the name?
 It is a tribute to David Bowie, referring to his last album.
