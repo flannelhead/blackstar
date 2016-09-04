@@ -27,7 +27,7 @@ cabal sandbox init
 cabal install --dependencies-only
 cabal build
 ```
-It will take a while to build all the dependencies. Currently, the package is meant to be built with `ghc-7.10.3`.
+It will take a while to build all the dependencies. Currently, the package is meant to be built with `ghc-8.0.1`.
 
 This repository includes a star lookup tree (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt tree in binary form is included for convenience, but you can also build it yourself. First, remove `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-tree PPM stars.kdt` and the tree will be generated and saved.
 
@@ -38,7 +38,7 @@ The LLVM backend isn't used by default since one needs to install (and usually b
 
 To successfully build with LLVM, you need to:
 
-* Download and [build](http://llvm.org/docs/GettingStarted.html#getting-started-quickly-a-summary) [LLVM 3.5.2](http://llvm.org/releases/download.html#3.5.2). You can skip the Clang parts. After the build, you should make sure the tools `llc` and `opt` are found in your `PATH`. Notice that these aren't included in the prebuilt LLVM binaries, that's why you'll need to build it.
+* Download and [build](http://llvm.org/docs/GettingStarted.html#getting-started-quickly-a-summary) [LLVM 3.7.1](http://llvm.org/releases/download.html#3.7.1). You can skip the Clang parts. After the build, you should make sure the tools `llc` and `opt` are found in your `PATH`. Notice that these aren't included in the prebuilt LLVM binaries, that's why you'll need to build it.
 * Build `blackstar` with `stack build --ghc-options -fllvm`. (If you've just built it, run `stack clean` first to ensure it really gets rebuilt with LLVM.)
 * Wait patiently
 * Enjoy the result!

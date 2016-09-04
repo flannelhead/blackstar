@@ -1,4 +1,4 @@
-resolver: lts-6.2
+resolver: nightly-2016-09-04
 flags: {}
 extra-package-dbs: []
 packages:
