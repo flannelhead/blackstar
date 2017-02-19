@@ -43,6 +43,8 @@ To successfully build with LLVM, you need to:
 * Wait patiently
 * Enjoy the result!
 
+You don't necessarily have to use LLVM at all. However, if you can acquire binaries of the right LLVM version, that will give you some speedups.
+
 ## Usage
 When `blackstar` has been built with `stack`, you can run it with
 ```
