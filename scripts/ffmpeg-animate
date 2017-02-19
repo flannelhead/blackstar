@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Create YouTube quality video from stills using ffmpeg
+#
+# USAGE:
+# ffmpeg-animate PREFIX OUTFILE
+
+ffmpeg -f image2 -i "${1}_%03d.png" \
+    -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p \
+    -r 25 out.mkv
+
