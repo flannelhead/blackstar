@@ -3,7 +3,9 @@
 # Create YouTube quality video from stills using ffmpeg
 #
 # USAGE:
-# ffmpeg-animate PREFIX OUTFILE
+# ffmpeg-animate PREFIX
+#
+# Writes to file "out.mkv" in the current directory
 
 ffmpeg -f image2 -i "${1}_%03d.png" \
     -c:v libx264 -preset slow -crf 18 -pix_fmt yuv420p \
