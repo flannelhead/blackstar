@@ -27,7 +27,7 @@ cabal sandbox init
 cabal install --dependencies-only
 cabal build
 ```
-It will take a while to build all the dependencies. Currently, the package is meant to be built with `ghc-8.0.1`.
+It will take a while to build all the dependencies. Currently, the package is meant to be built with `ghc-8.0.2`.
 
 This repository includes a star lookup tree (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt tree in binary form is included for convenience, but you can also build it yourself. First, remove `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-tree PPM stars.kdt` and the tree will be generated and saved.
 
