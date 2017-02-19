@@ -78,6 +78,35 @@ cabal run -- --help
 
 Better images can be achieved by rendering larger than the target size and then scaling down (some antialiasing is achieved). This is called supersampling and is implemented in `blackstar`. It can be enabled by setting `supersampling` to true in the YAML config file &mdash; see `scenes/default-aa.yaml` for an example.
 
+## Animation
+There is a separate YAML config format for specifying animations. For example, see [default-ani.yaml](animations/default-ani.yaml).
+
+In the first pass, the animation file must be rendered into separate config files for each frame. The `animate` executable takes care of this. First, create a directory where the frame config files will be put.
+```
+mkdir frames
+```
+Then run `animate`:
+```
+stack exec animate -- animations/default-ani.yaml -o frames
+```
+Now you should find quite a bunch of `.yaml` files in the folder `frames`.
+
+Make another folder for the output frames:
+```
+mkdir frames-out
+```
+Now you will be able to run `blackstar` in batch mode to render the frames:
+```
+stack exec blackstar -- frames -o frames-out
+```
+This will take quite a while.
+
+After the frames have been rendered, generate a video from the `*.png` still with your utility of preference. You can also use my script `scripts/ffmpeg-animate`, which uses `ffmpeg`. You only need to give it the prefix of the numbered frames:
+```
+scripts/ffmpeg-animate frames-out/default-ani
+```
+The output video will be rendered to `out.mkv`.
+
 ## Profiling
 Thanks to `stack`, profiling is incredibly easy. Rebuild `blackstar` by running
 ```
@@ -92,12 +121,9 @@ The profile will be generated to `blackstar.prof`.
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* Document the animator
-* Overall better documentation (wiki pages?)
-* Binary releases?
-* Preview GUI for planning scenes
-* GPU acceleration?
+* GPU acceleration (currently `Accelerate` on `CUDA` seems to be the best option)
 * Arbitrary textures for accretion disk?
 * Redshifting of the accretion disk?
+* Preview GUI for planning scenes
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
