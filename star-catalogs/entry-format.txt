@@ -1,0 +1,9 @@
+Each catalog entry in PPM contains 28 bytes with the following information:
+
+Real*8 SRA0     B1950 Right Ascension (radians)
+Real*8 SDEC0    B1950 Declination (radians)
+Character*2 IS  Spectral type (2 characters)
+Integer*2 MAG   V Magnitude * 100
+Real*4 XRPM     R.A. proper motion (radians per year)
+Real*4 XDPM     Dec. proper motion (radians per year)
+
