@@ -1,4 +1,3 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE StrictData #-}
 
 module Raytracer (render) where
@@ -8,6 +7,7 @@ import Data.Array.Repa.Index
 import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
 import Control.Lens
+import Data.List (foldl', scanl')
 
 import StarMap
 import Color
@@ -15,10 +15,11 @@ import ConfigFile
 import ImageFilters
 
 data Layer = Layer RGBA | Bottom RGBA | None
+data PhotonState = PhotonState (V3 Double) (V3 Double)
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Config -> DIM2 -> (V3 Double, V3 Double)
-generateRay cfg (Z :. y' :. x') = (vel, pos)
+generateRay :: Config -> DIM2 -> PhotonState
+generateRay cfg (Z :. y' :. x') = PhotonState vel pos
     where cam = camera cfg
           pos = position cam
           scn = scene cfg
@@ -49,12 +50,12 @@ render cfg startree = let
 
 traceRay :: Config -> RGB -> StarTree -> DIM2 -> (Double, Double, Double)
 traceRay cfg diskRGB startree pt = let
-        ray@(vel, pos) = generateRay cfg pt
+        ray@(PhotonState vel pos) = generateRay cfg pt
         h2 = sqrnorm $ pos `cross` vel
         scn = scene cfg
     in toTuple . dropAlpha . colorize scn diskRGB startree h2 $ ray
 
-colorize :: Scene -> RGB -> StarTree -> Double -> (V3 Double, V3 Double) -> RGBA
+colorize :: Scene -> RGB -> StarTree -> Double -> PhotonState -> RGBA
 colorize scn diskRGB startree h2 crd = let
     colorize' rgba crd' = let
         newCrd = rk4 (stepSize scn) h2 crd'
@@ -64,10 +65,10 @@ colorize scn diskRGB startree h2 crd = let
             None -> colorize' rgba newCrd
     in colorize' (RGBA 0 0 0 0) crd
 
-findColor :: Scene -> RGB -> StarTree -> (V3 Double, V3 Double)
-             -> (V3 Double, V3 Double) -> Layer
+findColor :: Scene -> RGB -> StarTree -> PhotonState -> PhotonState -> Layer
 {-# INLINE findColor #-}
-findColor scn diskRGB startree (vel, pos@(V3 _ y _)) (_, newPos@(V3 _ y' _))
+findColor scn diskRGB startree (PhotonState vel pos@(V3 _ y _))
+    (PhotonState _ newPos@(V3 _ y' _))
     | r2 < 1 = Bottom (RGBA 0 0 0 1)  -- already passed the event horizon
     | r2 > safeDistance scn = Bottom  -- sufficiently far away
         $ starLookup startree (starIntensity scn) (starSaturation scn) vel
@@ -81,24 +82,30 @@ findColor scn diskRGB startree (vel, pos@(V3 _ y _)) (_, newPos@(V3 _ y' _))
 
 diskColor' :: Scene -> RGB -> Double -> RGBA
 {-# INLINE diskColor' #-}
-diskColor' scn diskRGB !r = let
+diskColor' scn diskRGB r = let
         rInner = sqrt (diskInner scn)
         rOuter = sqrt (diskOuter scn)
         alpha = sin (pi * ((rOuter-r) / (rOuter-rInner))^(2 :: Int))
     in addAlpha diskRGB (alpha * diskOpacity scn)
 
-rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
+rk4 :: Double -> Double -> PhotonState -> PhotonState
 {-# INLINE rk4 #-}
-rk4 !h !h2 y = y `add`
-    ((k1 `add` ((k2 `add` k3) `mul` 2) `add` k4) `mul` (h/6))
-    where k1 = f y
-          k2 = f (y `add` (k1 `mul` (h/2)))
-          k3 = f (y `add` (k2 `mul` (h/2)))
-          k4 = f (y `add` (k3 `mul` h))
+rk4 h h2 y = let
+        mul :: PhotonState -> Double -> PhotonState
+        {-# INLINE mul #-}
+        mul (PhotonState u v) a = PhotonState (u ^* a) (v ^* a)
 
-          {-# INLINE mul #-}
-          mul (u, v) !a = (u ^* a, v ^* a)
-          {-# INLINE add #-}
-          add (x, z) (u, v) = (x ^+^ u, z ^+^ v)
-          {-# INLINE f #-}
-          f (vel, pos) = (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos, vel)
+        add :: PhotonState -> PhotonState -> PhotonState
+        {-# INLINE add #-}
+        add (PhotonState x z) (PhotonState u v) = PhotonState (x ^+^ u) (z ^+^ v)
+
+        f :: PhotonState -> PhotonState
+        {-# INLINE f #-}
+        f (PhotonState vel pos) =
+            PhotonState (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos) vel
+
+        g :: PhotonState -> Double -> PhotonState
+        {-# INLINE g #-}
+        g k c = f . add y $ mul k c
+    in foldl' add y $ zipWith mul (scanl' g (f y) [h/2, h/2, h])
+           [(h/6), (h/3), (h/3), (h/6)]
