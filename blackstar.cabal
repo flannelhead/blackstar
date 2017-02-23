@@ -7,7 +7,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Sakari Kapanen
 maintainer:          sakari.m.kapanen@gmail.com
-copyright:           2016 Sakari Kapanen
+copyright:           2017 Sakari Kapanen
 category:            Graphics
 build-type:          Simple
 -- extra-source-files:
