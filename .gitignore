@@ -8,3 +8,8 @@ PPM
 renders
 bloomed.png
 output
+*.png
+!example.png
+frames*
+*.mkv
+
