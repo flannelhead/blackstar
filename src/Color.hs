@@ -1,3 +1,5 @@
+{-# LANGUAGE StrictData #-}
+
 module Color
     ( RGB(RGB)
     , RGBA(RGBA)
@@ -27,9 +29,9 @@ import Codec.Picture.Saving
 type RGBImage = R.Array R.U DIM2 (Double, Double, Double)
 type RGBImageDelayed = R.Array R.D DIM2 (Double, Double, Double)
 
-data RGBA = RGBA !Double !Double !Double !Double
-data RGB = RGB !Double !Double !Double
-data HSV = HSV !Double !Double !Double
+data RGBA = RGBA Double Double Double Double
+data RGB = RGB Double Double Double
+data HSV = HSV Double Double Double
 
 rgbImageToImage :: RGBImage -> DynamicImage
 rgbImageToImage img = let

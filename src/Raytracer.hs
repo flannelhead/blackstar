@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE StrictData #-}
 
 module Raytracer (render) where
 
