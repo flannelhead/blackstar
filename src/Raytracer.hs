@@ -90,7 +90,7 @@ diskColor' scn diskRGB !r = let
 rk4 :: Double -> Double -> (V3 Double, V3 Double) -> (V3 Double, V3 Double)
 {-# INLINE rk4 #-}
 rk4 !h !h2 y = y `add`
-    ((k1 `add` (k2 `mul` 2) `add` (k3 `mul` 2) `add` k4) `mul` (h/6))
+    ((k1 `add` ((k2 `add` k3) `mul` 2) `add` k4) `mul` (h/6))
     where k1 = f y
           k2 = f (y `add` (k1 `mul` (h/2)))
           k3 = f (y `add` (k2 `mul` (h/2)))
