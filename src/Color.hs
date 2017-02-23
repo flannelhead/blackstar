@@ -1,4 +1,5 @@
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE Strict #-}
 
 module Color
     ( RGB(RGB)

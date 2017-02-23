@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE Strict #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
@@ -96,7 +97,7 @@ sqrnorm (V3 x y z) = x*x + y*y + z*z
 
 starLookup :: StarTree -> Double -> Double -> V3 Double -> RGBA
 {-# INLINE starLookup #-}
-starLookup starmap !intensity !saturation vel = let
+starLookup starmap intensity saturation vel = let
         -- The magnitude value tells about the intensity of the star. The
         -- brighter the star, the smaller the magnitude. These constants are
         -- used for adjusting the dynamics of the rendered celestial sphere.
