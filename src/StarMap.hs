@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, TypeSynonymInstances, FlexibleInstances #-}
+{-# LANGUAGE TypeSynonymInstances, FlexibleInstances #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE Strict #-}
 
@@ -56,7 +56,7 @@ readMap = do
                , (fromIntegral mag, chr $ fromIntegral spectral) )
 
 starColor' :: (Int, Char) -> (Int, Double, Double)
-starColor' (!mag, !ch) = let (!h, !s) = starColor ch in (mag, h, s)
+starColor' (mag, ch) = let (h, s) = starColor ch in (mag, h, s)
 
 -- Some nice colour values for different spectral types
 starColor :: Char -> (Double, Double)
