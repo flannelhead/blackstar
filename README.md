@@ -121,9 +121,9 @@ The profile will be generated to `blackstar.prof`.
 ## TODO
 As always, there's a plenty of room for improvement. For example:
 
-* GPU acceleration (currently `Accelerate` on `CUDA` seems to be the best option)
-* Arbitrary textures for accretion disk?
-* Redshifting of the accretion disk?
-* Preview GUI for planning scenes
+* Animation: mathematically rigorous non-stationary observer
+* Arbitrary textures for accretion disk (or some cool noise generator)
+* Redshifting of the accretion disk
+* Preview / scene planner GUI ([fltkhs](https://hackage.haskell.org/package/fltkhs))
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
