@@ -17,7 +17,6 @@ library
   hs-source-dirs:      src
   exposed-modules:     Raytracer
                      , StarMap
-                     , Color
                      , ConfigFile
                      , ImageFilters
                      , Util
@@ -35,7 +34,7 @@ library
                      , yaml
                      , aeson
                      , directory
-                     , repa
+                     , hip
                      , JuicyPixels
                      , filepath
                      , time
@@ -53,6 +52,7 @@ executable blackstar
                      , cmdargs
                      , filepath
                      , ansi-terminal
+                     , hip
   default-language:    Haskell2010
 
 executable animate

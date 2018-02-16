@@ -2,37 +2,28 @@
 
 module ImageFilters (bloom, supersample) where
 
-import qualified Data.Array.Repa as R
-import Data.Array.Repa.Index
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
 import Control.Monad (replicateM_)
-
-import Color
+import Graphics.Image as I
+import Graphics.Image.Interface
 
 ix1d :: Int -> Int -> Int -> Int
 {-# INLINE ix1d #-}
 ix1d !w !y !x = y*w + x
 
-add :: (Double, Double, Double) -> (Double, Double, Double)
-       -> (Double, Double, Double)
-{-# INLINE add #-}
-add (!r, !g, !b) (!r', !g', !b') = (r+r', g+g', b+b')
+add :: Pixel RGB Double -> Pixel RGB Double -> Pixel RGB Double
+add = liftPx2 (+)
+sub :: Pixel RGB Double -> Pixel RGB Double -> Pixel RGB Double
+sub = liftPx2 (-)
+mul :: Double -> Pixel RGB Double -> Pixel RGB Double
+mul a = liftPx (a *)
 
-sub :: (Double, Double, Double) -> (Double, Double, Double)
-       -> (Double, Double, Double)
-{-# INLINE sub #-}
-sub (!r, !g, !b) (!r', !g', !b') = (r-r', g-g', b-b')
-
-mul :: Double -> (Double, Double, Double) -> (Double, Double, Double)
-{-# INLINE mul #-}
-mul a (!r, !g, !b) = (a*r, a*g, a*b)
-
-boxBlur :: Int -> Int -> RGBImage -> IO RGBImage
+boxBlur :: Int -> Int -> Image VU RGB Double -> IO (Image VU RGB Double)
 boxBlur !r !passes img = let
-    sh@(Z :. h :. w) = R.extent img
-    rows = U.enumFromN (0 :: Int) h
-    cols = U.enumFromN (0 :: Int) w
+    myDims@(h, w) = dims img
+    rows' = U.enumFromN (0 :: Int) h
+    cols' = U.enumFromN (0 :: Int) w
 
     -- Functions to safely index a vector representing an image with specialized
     -- horizontal / vertical bound checks. Out of bounds indices return a black
@@ -42,10 +33,10 @@ boxBlur !r !passes img = let
     {-# INLINE ix1d' #-}
     ix1d' = ix1d w
     ixh v y x
-        | x < 0 || x >= w = (0, 0, 0)
+        | x < 0 || x >= w = PixelRGB 0 0 0
         | otherwise = U.unsafeIndex v $ ix1d' y x
     ixv v x y
-        | y < 0 || y >= h = (0, 0, 0)
+        | y < 0 || y >= h = PixelRGB 0 0 0
         | otherwise = U.unsafeIndex v $ ix1d' y x
 
     -- Normalize by the "width" of the kernel
@@ -67,35 +58,34 @@ boxBlur !r !passes img = let
             return newRGB
         -- Sweep over the row / col of the image
         in U.foldM'_ accumulate startVal crds
-
     in do
-        mv <- U.thaw $ R.toUnboxed img
+        mv <- U.thaw $ toVector img
         let wrt = MU.unsafeWrite mv
         replicateM_ passes $ do
             -- First blur horizontally
             tmp1 <- U.freeze mv
-            U.mapM_ (blur wrt cols ix1d' ixh tmp1) rows
+            U.mapM_ (blur wrt cols' ix1d' ixh tmp1) rows'
             -- Then vertically
             tmp2 <- U.freeze mv
-            U.mapM_ (blur wrt rows (flip ix1d') ixv tmp2) cols
+            U.mapM_ (blur wrt rows' (flip ix1d') ixv tmp2) cols'
         out <- U.unsafeFreeze mv
-        return $ R.fromUnboxed sh out
+        return $ fromVector myDims out
 
-bloom :: Double -> Int -> RGBImage -> IO RGBImage
+bloom :: Double -> Int -> Image VU RGB Double -> IO (Image VU RGB Double)
 bloom strength divider img = do
-    let sh@(Z :. _ :. w) = R.extent img
+    let myDims@(_, w) = dims img
     blurred <- boxBlur (w `div` divider) 3 img
-    R.computeUnboxedP . R.fromFunction sh
-        $ \ix -> img `R.unsafeIndex` ix `add`
-                 mul strength (blurred `R.unsafeIndex` ix)
+    return . compute . makeImage myDims
+        $ \ix -> img `unsafeIndex` ix `add`
+                 mul strength (blurred `unsafeIndex` ix)
 
-supersample :: RGBImageDelayed -> RGBImageDelayed
+supersample :: Image RPU RGB Double -> Image RPU RGB Double
 supersample img = let
-    Z :. h :. w = R.extent img
+    (h, w) = dims img
     {-# INLINE pix #-}
-    pix y x = img `R.unsafeIndex` ix2 y x
+    pix y x = (toManifest img) `unsafeIndex` (y, x)
     {-# INLINE f #-}
-    f (Z :. y :. x) = mul 0.25
+    f (y, x) = mul 0.25
         $ pix (2*y) (2*x) `add` pix (2*y+1) (2*x) `add` pix (2*y) (2*x+1)
                           `add` pix (2*y+1) (2*x+1)
-    in R.fromFunction (ix2 (h `div` 2) (w `div` 2)) f
+    in makeImage (h `div` 2, w `div` 2) f

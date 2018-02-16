@@ -7,17 +7,19 @@
 module StarMap
     ( Star, StarTree, StoredStarTree
     , readMapFromFile, treeToByteString, readTreeFromFile
-    , buildStarTree, sqrnorm, starLookup ) where
+    , buildStarTree, starLookup ) where
 
 import Control.Monad
 import Data.Word
 import Data.Char
+import Data.Foldable
 import qualified Data.ByteString as B
-import Data.Serialize
+import Data.Serialize as S
 import Data.KdMap.Static
-import Linear
+import Linear as L
+import Graphics.Image as I
+import Graphics.Image.Interface
 
-import Color
 import Util
 
 type Star = (V3 Double, (Int, Double, Double))
@@ -32,11 +34,11 @@ instance Serialize (TreeNode Double (V3 Double) (Int, Char))
 -- serialize the KdMap anyway
 instance Serialize (SquaredDistanceFn Double (V3 Double)) where
     put _ = put (0 :: Word8)
-    get = skip 1 >> return (defaultSqrDist v3AsList)
+    get = skip 1 >> return (defaultSqrDist toList)
 
 instance Serialize (PointAsListFn Double (V3 Double)) where
     put _ = put (0 :: Word8)
-    get = skip 1 >> return v3AsList
+    get = skip 1 >> return toList
 
 -- Parse the star list in the binary format specified at
 -- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
@@ -60,13 +62,13 @@ starColor' (mag, ch) = let (h, s) = starColor ch in (mag, h, s)
 
 -- Some nice colour values for different spectral types
 starColor :: Char -> (Double, Double)
-starColor 'O' = (227, 0.39)
-starColor 'B' = (226, 0.33)
-starColor 'A' = (224, 0.21)
-starColor 'F' = (234, 0.03)
-starColor 'G' = (32, 0.09)
-starColor 'K' = (34, 0.29)
-starColor 'M' = (34, 0.56)
+starColor 'O' = (0.631, 0.39)
+starColor 'B' = (0.628, 0.33)
+starColor 'A' = (0.622, 0.21)
+starColor 'F' = (0.650, 0.03)
+starColor 'G' = (0.089, 0.09)
+starColor 'K' = (0.094, 0.29)
+starColor 'M' = (0.094, 0.56)
 starColor _   = (0, 0)
 
 raDecToCartesian :: Double -> Double -> V3 Double
@@ -80,47 +82,34 @@ readMapFromFile path = do
 readTreeFromFile :: FilePath -> IO (Either String StarTree)
 readTreeFromFile path = do
     ebs <- readSafe path
-    return $ fmap starColor' <$> (decode =<< ebs)
+    return $ fmap starColor' <$> (S.decode =<< ebs)
 
 treeToByteString :: StoredStarTree -> B.ByteString
-treeToByteString = encode
+treeToByteString = S.encode
 
 buildStarTree :: [StoredStar] -> StoredStarTree
-buildStarTree = build v3AsList
+buildStarTree = build toList
 
-v3AsList :: V3 Double -> [Double]
-v3AsList (V3 x y z) = [x, y, z]
-
-sqrnorm :: V3 Double -> Double
-{-# INLINE sqrnorm #-}
-sqrnorm (V3 x y z) = x*x + y*y + z*z
-
-starLookup :: StarTree -> Double -> Double -> V3 Double -> RGBA
+starLookup :: StarTree -> Double -> Double -> V3 Double -> Pixel RGB Double
 {-# INLINE starLookup #-}
 starLookup starmap intensity saturation vel = let
-        -- The magnitude value tells about the intensity of the star. The
-        -- brighter the star, the smaller the magnitude. These constants are
-        -- used for adjusting the dynamics of the rendered celestial sphere.
-        -- We need three fixed points to determine the dynamics:
-        -- the points m0 and m1 fix the logarithmic scale. m0 is the reference
-        -- "minimum" magnitude. When the magnitude reaches m1, the brightness
-        -- will be doubled. m2 is required for normalization and corresponds to
-        -- the maximal brightness value that will be represented on the screen.
-        m0 = 1350 :: Double  -- the "minimum visible" magnitude
-        m1 = 1300 :: Double  -- the "double brightness" magnitude
-        m2 = 950 :: Double  -- the "maximum brightness" magnitude
-        w = 0.0005  -- width parameter of the gaussian function
-        r = 0.002  -- star sampling radius
+    -- The magnitude value tells about the intensity of the star. The
+    -- brighter the star, the smaller the magnitude. These constants are
+    -- used for adjusting the dynamics of the rendered celestial sphere.
+    max_brightness = 350 -- the "maximum brightness" magnitude
+    dynamic = 100        -- "dynamic range": magnitude change that doubles intensity
+    w = 0.0022           -- width parameter of the gaussian function
 
-        nvel = normalize vel
-        d2 = sqrnorm $ pos ^-^ nvel  -- the distance from the star on the
-                                     -- celestial sphere surface
-        (pos, (mag, hue, sat)) = nearest starmap nvel
+    nvel = L.normalize vel
+    stars = inRadius starmap (20 * w) nvel
+
+    renderPixel (pos, (mag, hue, sat)) = let
+        d2 = qd pos nvel
+        a = log 2 / dynamic
         -- Conversion from the log magnitude scale to linear brightness
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
-        a = log 2 / (m0 - m1)
-        val = (* intensity) . min 1
-              . exp $ a*(m2 - fromIntegral mag) - d2/(2*w^(2 :: Int))
-    in if d2 < r*r then addAlpha (hsvToRGB (HSV hue (saturation * sat) val)) 1
-                   else RGBA 0 0 0 1
+        val = min 1 . (* intensity)
+            . exp $ a * (max_brightness - fromIntegral mag) - d2 / (2 * w^(2 :: Int))
+        in toPixelRGB $ PixelHSI hue (saturation * sat) val
+    in liftPx (min 1) . foldl' (liftPx2 (+)) (PixelRGB 0 0 0) $ renderPixel <$> stars

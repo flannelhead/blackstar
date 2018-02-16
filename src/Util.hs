@@ -4,7 +4,6 @@ module Util ( promptOverwriteFile, readSafe, normalizePath
 import System.Directory
 import System.IO
 import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy as BL
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import System.FilePath
 
@@ -15,16 +14,16 @@ readSafe path = do
               else return . Left $ "Error: file " ++ path
                   ++ " doesn't exist.\n"
 
-promptOverwriteFile :: FilePath -> BL.ByteString -> IO ()
-promptOverwriteFile path bs = do
+promptOverwriteFile :: FilePath -> (FilePath -> IO ()) -> IO ()
+promptOverwriteFile path doWrite = do
     doesExist <- doesFileExist path
     if doesExist then do
         putStr $ "Overwrite " ++ path ++ "? [y/N] "
         hFlush stdout
         answer <- getLine
-        if answer == "y" || answer == "Y" then BL.writeFile path bs
+        if answer == "y" || answer == "Y" then doWrite path
                                           else putStrLn "Nothing was written."
-        else BL.writeFile path bs
+        else doWrite path
 
 normalizePath :: FilePath -> IO FilePath
 normalizePath path = (dropTrailingPathSeparator . normalise)

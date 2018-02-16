@@ -11,8 +11,7 @@ module ConfigFile
 import Data.Aeson.Types
 import Linear
 import GHC.Generics
-
-import Color (HSV(HSV))
+import Graphics.Image as I
 
 data Config = Config { scene :: Scene
                      , camera :: Camera }
@@ -24,7 +23,7 @@ data Scene = Scene { safeDistance :: !Double
                    , bloomDivider :: !Int
                    , starIntensity :: !Double
                    , starSaturation :: !Double
-                   , diskColor :: !HSV
+                   , diskColor :: !(Pixel HSI Double)
                    , diskOpacity :: !Double
                    , diskInner :: !Double
                    , diskOuter :: !Double
@@ -46,13 +45,13 @@ instance FromJSON (V3 Double) where
 instance ToJSON (V3 Double) where
     toJSON (V3 x y z) = toJSON [x, y, z]
 
-instance FromJSON HSV where
-    parseJSON hsv = do
-        [x, y, z] <- parseJSON hsv
-        return $ HSV x y z
+instance FromJSON (Pixel HSI Double) where
+    parseJSON hsi = do
+        [x, y, z] <- parseJSON hsi
+        return $ PixelHSI x y z
 
-instance ToJSON HSV where
-    toJSON (HSV h s v) = toJSON [h, s, v]
+instance ToJSON (Pixel HSI Double) where
+    toJSON (PixelHSI h s i) = toJSON [h, s, i]
 
 instance FromJSON Config
 
@@ -72,7 +71,7 @@ instance FromJSON Scene where
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskHSV"
-                             .!= HSV 60 0.1 0.95          <*>
+                             .!= PixelHSI 60 0.1 0.95     <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>

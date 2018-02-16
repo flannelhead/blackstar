@@ -84,4 +84,3 @@ interpolationFunction :: Fractional a => InterpolationMethod -> Double
 {-# INLINE interpolationFunction #-}
 interpolationFunction method t times a b = case method of
     Linear -> a + t `times` (b - a)
-    _ -> interpolationFunction Linear t times a b

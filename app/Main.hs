@@ -4,7 +4,6 @@
 module Main where
 
 import System.Directory
-import qualified Data.ByteString.Lazy as BL
 import Control.Monad (when, forM_)
 import Data.Yaml (decodeFileEither, prettyPrintParseException)
 import System.Console.CmdArgs
@@ -14,7 +13,6 @@ import System.Console.ANSI (clearScreen, setCursorPosition)
 
 import Raytracer
 import StarMap
-import Color
 import ConfigFile
 import ImageFilters
 import Util
@@ -106,7 +104,6 @@ prepareScene cfg doPreview = let
 
 doRender :: Blackstar -> Config -> StarTree -> String -> String -> IO ()
 doRender cmdline cfg tree sceneName outdir = do
-    let doWrite = if force cmdline then BL.writeFile else promptOverwriteFile
     putStrLn $ "Rendering " ++ sceneName ++ "..."
     let scn = scene cfg
     img <- timeAction "Rendering" $ render cfg tree
@@ -121,6 +118,8 @@ doRender cmdline cfg tree sceneName outdir = do
         else return img
 
     putStrLn $ "Saving to " ++ outName ++ "..."
-    doWrite outName $ pngByteString final
+    if force cmdline
+      then writeImg final outName
+      else promptOverwriteFile outName (writeImg final)
 
     putStrLn "Everything done. Thank you!"

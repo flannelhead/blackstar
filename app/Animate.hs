@@ -54,12 +54,11 @@ main = do
                             (\(frame, idx) -> do
                                 let filename = outPath </> basename ++ "_" ++
                                         padZero (nFr - 1) idx <.> ".yaml"
-                                let outBs = encode frame
-
-                                let write = if force cmdline
-                                    then writeFile
-                                    else promptOverwriteFile
-                                write filename $ fromStrict outBs
+                                let outBl = fromStrict $ encode frame
+                                if force cmdline
+                                    then writeFile filename outBl
+                                    else promptOverwriteFile filename 
+                                           (\fname -> writeFile fname outBl)
                             )
                     Left err -> putStrLn err
             Left err -> putStrLn $ "Error when decoding config:\n" ++

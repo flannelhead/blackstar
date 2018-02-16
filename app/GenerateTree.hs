@@ -21,7 +21,9 @@ main = do
                     putStrLn "Generating the star tree..."
                     treeBs <- timeAction "Building the tree"
                         (return $! treeToByteString $ buildStarTree stars)
-                    promptOverwriteFile outfile' $ B.fromStrict treeBs
+                    let treeBl = B.fromStrict treeBs
+                    promptOverwriteFile outfile'
+                        (\filename -> B.writeFile filename treeBl)
                     putStrLn $ "Tree saved to " ++ outfile' ++ "."
                 Left  err   ->  putStrLn err
         _ -> putStrLn "Usage: generate-tree <INFILE> <OUTFILE>"
