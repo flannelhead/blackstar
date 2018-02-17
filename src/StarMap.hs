@@ -101,7 +101,7 @@ starLookup starmap intensity saturation vel = let
     w = 0.0005           -- width parameter of the gaussian function
 
     nvel = L.normalize vel
-    stars = inRadius starmap (20 * w) nvel
+    stars = inRadius starmap (3 * w) nvel
 
     renderPixel (pos, (mag, hue, sat)) = let
         d2 = qd pos nvel
