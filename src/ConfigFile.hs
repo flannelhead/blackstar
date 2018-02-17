@@ -48,10 +48,10 @@ instance ToJSON (V3 Double) where
 instance FromJSON (Pixel HSI Double) where
     parseJSON hsi = do
         [x, y, z] <- parseJSON hsi
-        return $ PixelHSI x y z
+        return $ PixelHSI (x / 360) y z
 
 instance ToJSON (Pixel HSI Double) where
-    toJSON (PixelHSI h s i) = toJSON [h, s, i]
+    toJSON (PixelHSI h s i) = toJSON [360 * h, s, i]
 
 instance FromJSON Config
 
@@ -71,7 +71,7 @@ instance FromJSON Scene where
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskHSV"
-                             .!= PixelHSI 60 0.1 0.95     <*>
+                             .!= PixelHSI 0.16 0.1 0.95     <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>
