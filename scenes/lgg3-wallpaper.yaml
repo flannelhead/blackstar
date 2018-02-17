@@ -9,7 +9,7 @@ scene:
     bloomStrength: 0.7
     starIntensity: 0.7
     starSaturation: 0.7
-    diskHSV: [180, 0.1, 1.05]
+    diskColor: [180, 0.1, 1.05]
     diskOpacity: 0.95
     diskInner: 1.8
     diskOuter: 13

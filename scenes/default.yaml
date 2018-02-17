@@ -19,7 +19,7 @@ scene:
                        # 1 = fully opaque)
     diskInner: 3       # The inner radius of the accretion disk
     diskOuter: 12      # The outer radius of the accretion disk
-    diskHSV: [60, 0.1, 0.95]  # The colour of the accretion disk in the HSV space.
+    diskColor: [60, 0.1, 0.95]  # The colour of the accretion disk in the Color space.
                               # H: 0..360, S: 0..1, V: 0..1
 
     supersampling: false  # Set this to true to enable smoothing by supersampling
