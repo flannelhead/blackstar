@@ -70,8 +70,8 @@ instance FromJSON Scene where
                            v .:? "bloomDivider"   .!= 25  <*>
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
-                           v .:? "diskHSV"
-                             .!= PixelHSI 0.16 0.1 0.95     <*>
+                           v .:? "diskColor"
+                             .!= PixelHSI 0.16 0.1 0.95   <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>

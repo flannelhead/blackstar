@@ -29,10 +29,10 @@ normalizePath :: FilePath -> IO FilePath
 normalizePath path = (dropTrailingPathSeparator . normalise)
     <$> makeRelativeToCurrentDirectory path
 
-timeAction :: String -> IO a -> IO a
-timeAction actionName action = do
+timeAction :: String -> a -> IO a
+timeAction actionName value = do
     time1 <- (round <$> getPOSIXTime) :: IO Int
-    res <- action
+    let !res = value
     time2 <- round <$> getPOSIXTime
     let secs = time2 - time1
     putStrLn $ actionName ++ " completed in " ++ show (secs `div` 60)

@@ -1,4 +1,5 @@
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE Strict #-}
 
 module Raytracer (render, writeImg) where
 
@@ -57,7 +58,6 @@ render cfg startree = let
     img = makeImage (h', w') $ traceRay cfg' diskRGB startree :: Image RPU RGB Double
     final = toManifest img :: Image VU RGB Double
     in if supersampling scn then supersample final else final
-
 
 traceRay :: Config -> Pixel RGB Double -> StarTree -> (Int, Int)
             -> Pixel RGB Double

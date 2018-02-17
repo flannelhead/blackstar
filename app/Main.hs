@@ -106,15 +106,15 @@ doRender :: Blackstar -> Config -> StarTree -> String -> String -> IO ()
 doRender cmdline cfg tree sceneName outdir = do
     putStrLn $ "Rendering " ++ sceneName ++ "..."
     let scn = scene cfg
-    img <- timeAction "Rendering" $ return (render cfg tree)
+    img <- timeAction "Rendering" $ render cfg tree
 
     let outName = outdir </> sceneName <.> ".png"
 
     final <- if bloomStrength scn /= 0
         then do
             putStrLn "Applying bloom..."
-            timeAction "Bloom"
-                $ bloom (bloomStrength scn) (bloomDivider scn) img
+            bloomed <- bloom (bloomStrength scn) (bloomDivider scn) img
+            timeAction "Bloom" bloomed
         else return img
 
     putStrLn $ "Saving to " ++ outName ++ "..."

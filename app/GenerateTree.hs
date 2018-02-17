@@ -19,9 +19,9 @@ main = do
             case eitherMap of
                 Right stars -> do
                     putStrLn "Generating the star tree..."
-                    treeBs <- timeAction "Building the tree"
-                        (return $! treeToByteString $ buildStarTree stars)
-                    let treeBl = B.fromStrict treeBs
+                    tree <- timeAction "Building the tree"
+                        $ buildStarTree stars
+                    let treeBl = B.fromStrict $ treeToByteString tree
                     promptOverwriteFile outfile'
                         (\filename -> B.writeFile filename treeBl)
                     putStrLn $ "Tree saved to " ++ outfile' ++ "."
