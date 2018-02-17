@@ -106,7 +106,7 @@ doRender :: Blackstar -> Config -> StarTree -> String -> String -> IO ()
 doRender cmdline cfg tree sceneName outdir = do
     putStrLn $ "Rendering " ++ sceneName ++ "..."
     let scn = scene cfg
-    img <- timeAction "Rendering" $ render cfg tree
+    img <- timeAction "Rendering" $ return (render cfg tree)
 
     let outName = outdir </> sceneName <.> ".png"
 

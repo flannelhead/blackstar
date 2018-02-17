@@ -79,11 +79,11 @@ bloom strength divider img = do
         $ \ix -> img `unsafeIndex` ix `add`
                  mul strength (blurred `unsafeIndex` ix)
 
-supersample :: Image RPU RGB Double -> Image RPU RGB Double
+supersample :: Image VU RGB Double -> Image VU RGB Double
 supersample img = let
     (h, w) = dims img
     {-# INLINE pix #-}
-    pix y x = (toManifest img) `unsafeIndex` (y, x)
+    pix y x = img `unsafeIndex` (y, x)
     {-# INLINE f #-}
     f (y, x) = mul 0.25
         $ pix (2*y) (2*x) `add` pix (2*y+1) (2*x) `add` pix (2*y) (2*x+1)

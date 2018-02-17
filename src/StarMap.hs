@@ -96,9 +96,9 @@ starLookup starmap intensity saturation vel = let
     -- The magnitude value tells about the intensity of the star. The
     -- brighter the star, the smaller the magnitude. These constants are
     -- used for adjusting the dynamics of the rendered celestial sphere.
-    max_brightness = 350 -- the "maximum brightness" magnitude
-    dynamic = 100        -- "dynamic range": magnitude change that doubles intensity
-    w = 0.0022           -- width parameter of the gaussian function
+    max_brightness = 950 -- the "maximum brightness" magnitude
+    dynamic = 50         -- "dynamic range": magnitude change that doubles intensity
+    w = 0.0005           -- width parameter of the gaussian function
 
     nvel = L.normalize vel
     stars = inRadius starmap (20 * w) nvel
@@ -109,7 +109,7 @@ starLookup starmap intensity saturation vel = let
         -- Conversion from the log magnitude scale to linear brightness
         -- and a Gaussian intensity function. This determines the apparent size
         -- and brightness of the star.
-        val = min 1 . (* intensity)
+        val = (* intensity) . min 1
             . exp $ a * (max_brightness - fromIntegral mag) - d2 / (2 * w^(2 :: Int))
         in toPixelRGB $ PixelHSI hue (saturation * sat) val
     in liftPx (min 1) . foldl' (liftPx2 (+)) (PixelRGB 0 0 0) $ renderPixel <$> stars

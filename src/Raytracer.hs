@@ -27,7 +27,6 @@ blend (PixelRGBA tr tg tb ta) (PixelRGBA br bg bb ba) = let
         comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
      in PixelRGBA (comp tr br) (comp tg bg) (comp tb bb) a
 
-
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Config -> (Int, Int) -> PhotonState
 generateRay cfg (y', x') = PhotonState vel pos
@@ -42,7 +41,7 @@ generateRay cfg (y', x') = PhotonState vel pos
                       (fov cam * (0.5 - fromIntegral y' / h) * h/w)
                       (-1)
 
-render :: Config -> StarTree -> IO (Image VU RGB Double)
+render :: Config -> StarTree -> Image VU RGB Double
 render cfg startree = let
     scn = scene cfg
     cam = camera cfg
@@ -55,8 +54,9 @@ render cfg startree = let
                , resolution = res }
     cfg' = cfg { scene = scn' }
     diskRGB = toPixelRGB $ diskColor scn
-    img = makeImage (h', w') (traceRay cfg' diskRGB startree)
-    in return . toManifest $ if supersampling scn then supersample img else img
+    img = makeImage (h', w') $ traceRay cfg' diskRGB startree :: Image RPU RGB Double
+    final = toManifest img :: Image VU RGB Double
+    in if supersampling scn then supersample final else final
 
 
 traceRay :: Config -> Pixel RGB Double -> StarTree -> (Int, Int)
