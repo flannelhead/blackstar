@@ -12,4 +12,6 @@ output
 !example.png
 frames*
 *.mkv
+dist*
+.ghc.*
 

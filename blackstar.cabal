@@ -36,6 +36,7 @@ library
                      , JuicyPixels
                      , filepath
                      , time
+                     , deepseq
   default-language:    Haskell2010
 
 executable blackstar

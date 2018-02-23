@@ -6,6 +6,7 @@ import System.IO
 import qualified Data.ByteString as B
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import System.FilePath
+import Control.DeepSeq
 
 readSafe :: FilePath -> IO (Either String B.ByteString)
 readSafe path = do
@@ -29,11 +30,11 @@ normalizePath :: FilePath -> IO FilePath
 normalizePath path = (dropTrailingPathSeparator . normalise)
     <$> makeRelativeToCurrentDirectory path
 
-timeAction :: String -> a -> IO a
+timeAction :: NFData a => String -> a -> IO a
 timeAction actionName value = do
     time1 <- (round <$> getPOSIXTime) :: IO Int
-    let !res = value
-    time2 <- round <$> getPOSIXTime
+    let res = value
+    time2 <- round <$> (res `deepseq` getPOSIXTime)
     let secs = time2 - time1
     putStrLn $ actionName ++ " completed in " ++ show (secs `div` 60)
         ++ " min " ++ show (secs `rem` 60) ++ " sec."
