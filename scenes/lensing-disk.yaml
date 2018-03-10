@@ -6,9 +6,9 @@ camera:
 
 scene:
     resolution: [1280, 800]
-    bloomStrength: 0.7
-    starIntensity: 0.85
-    starSaturation: 0.75
+    bloomStrength: 0.15
+    starIntensity: 0.4
+    starSaturation: 1.5
     diskOpacity: 0.95
     diskInner: 3
     diskOuter: 12

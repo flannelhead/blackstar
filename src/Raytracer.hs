@@ -18,9 +18,16 @@ import ImageFilters
 data Layer = Layer (Pixel RGBA Double) | Bottom (Pixel RGBA Double) | None
 data PhotonState = PhotonState (V3 Double) (V3 Double)
 
+sRGB :: Double -> Double
+sRGB x = let
+  a = 0.055
+  in if x < 0.0031308 then 12.92 * x
+    else (1 + a) * x ** (1.0 / 2.4) - a
+
 writeImg :: Image VU RGB Double -> FilePath -> IO ()
 writeImg img path =
-    writeImageExact PNG [] path . exchange VS . compute . toWord8I $ img
+    writeImageExact PNG [] path . exchange VS . compute . toWord8I
+      . I.map (fmap sRGB) $ img
 
 blend :: Pixel RGBA Double -> Pixel RGBA Double -> Pixel RGBA Double
 blend (PixelRGBA tr tg tb ta) (PixelRGBA br bg bb ba) = let

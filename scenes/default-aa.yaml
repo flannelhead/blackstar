@@ -5,11 +5,12 @@ camera:
     fov:        1.5
 
 scene:
-    resolution: [1280, 720]
-    bloomStrength: 0.7
-    starIntensity: 0.7
-    starSaturation: 0.7
+    resolution: [1920, 1080]
+    bloomStrength: 0.15
+    starIntensity: 0.4
+    starSaturation: 1.5
+    diskColor: [180, 0.1, 1.05]
     diskOpacity: 0.95
-    diskInner: 3
-    diskOuter: 12
+    diskInner: 1.8
+    diskOuter: 13
     supersampling: true

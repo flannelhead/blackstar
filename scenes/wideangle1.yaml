@@ -6,8 +6,8 @@ camera:
 
 scene:
     resolution: [1920, 1080]
-    bloomStrength: 0.3
-    starIntensity: 0.7
-    starSaturation: 0.7
+    bloomStrength: 0.15
+    starIntensity: 0.4
+    starSaturation: 1.5
     diskOpacity: 0
     supersampling: true
