@@ -1,4 +1,4 @@
-resolver: lts-10.8
+resolver: lts-13.16
 flags: {}
 extra-package-dbs: []
 packages:

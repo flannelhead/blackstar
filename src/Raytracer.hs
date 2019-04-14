@@ -6,9 +6,11 @@ module Raytracer (render, writeImg) where
 import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
 import Control.Lens
+import Data.Default
 import Data.List (foldl', scanl')
-import Graphics.Image as I
-import Graphics.Image.Interface
+import Data.Massiv.Array as A
+import Data.Massiv.Array.IO
+import Graphics.ColorSpace
 import Prelude as P
 
 import StarMap
@@ -24,10 +26,10 @@ sRGB x = let
   in if x < 0.0031308 then 12.92 * x
     else (1 + a) * x ** (1.0 / 2.4) - a
 
-writeImg :: Image VU RGB Double -> FilePath -> IO ()
+writeImg :: Image U RGB Double -> FilePath -> IO ()
 writeImg img path =
-    writeImageExact PNG [] path . exchange VS . compute . toWord8I
-      . I.map (fmap sRGB) $ img
+    writeArray PNG def path
+      . A.map (toWord8 . fmap sRGB) $ img
 
 blend :: Pixel RGBA Double -> Pixel RGBA Double -> Pixel RGBA Double
 blend (PixelRGBA tr tg tb ta) (PixelRGBA br bg bb ba) = let
@@ -36,8 +38,8 @@ blend (PixelRGBA tr tg tb ta) (PixelRGBA br bg bb ba) = let
      in PixelRGBA (comp tr br) (comp tg bg) (comp tb bb) a
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Config -> (Int, Int) -> PhotonState
-generateRay cfg (y', x') = PhotonState vel pos
+generateRay :: Config -> Ix2 -> PhotonState
+generateRay cfg (y' :. x') = PhotonState vel pos
     where cam = camera cfg
           pos = position cam
           scn = scene cfg
@@ -49,7 +51,7 @@ generateRay cfg (y', x') = PhotonState vel pos
                       (fov cam * (0.5 - fromIntegral y' / h) * h/w)
                       (-1)
 
-render :: Config -> StarTree -> Image VU RGB Double
+render :: Config -> StarTree -> Image U RGB Double
 render cfg startree = let
     scn = scene cfg
     cam = camera cfg
@@ -62,11 +64,10 @@ render cfg startree = let
                , resolution = res }
     cfg' = cfg { scene = scn' }
     diskRGB = toPixelRGB $ diskColor scn
-    img = makeImage (h', w') $ traceRay cfg' diskRGB startree :: Image RPU RGB Double
-    final = toManifest img :: Image VU RGB Double
-    in if supersampling scn then supersample final else final
+    img = makeArrayR U Par (h' :. w') $ traceRay cfg' diskRGB startree :: Image U RGB Double
+    in if supersampling scn then supersample img else img
 
-traceRay :: Config -> Pixel RGB Double -> StarTree -> (Int, Int)
+traceRay :: Config -> Pixel RGB Double -> StarTree -> Ix2
             -> Pixel RGB Double
 traceRay cfg diskRGB startree pt = let
         ray@(PhotonState vel pos) = generateRay cfg pt

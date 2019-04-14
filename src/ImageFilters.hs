@@ -4,24 +4,28 @@ module ImageFilters (bloom, supersample) where
 
 import qualified Data.Vector.Unboxed as U
 import qualified Data.Vector.Unboxed.Mutable as MU
+import Data.Massiv.Array
+import Data.Massiv.Array.Manifest.Vector
+import Data.Massiv.Array.Unsafe
+import Data.Massiv.Array.IO
 import Control.Monad (replicateM_)
-import Graphics.Image as I
-import Graphics.Image.Interface
+import Control.Applicative (liftA2)
+import Graphics.ColorSpace
 
 ix1d :: Int -> Int -> Int -> Int
 {-# INLINE ix1d #-}
 ix1d !w !y !x = y*w + x
 
 add :: Pixel RGB Double -> Pixel RGB Double -> Pixel RGB Double
-add = liftPx2 (+)
+add = liftA2 (+)
 sub :: Pixel RGB Double -> Pixel RGB Double -> Pixel RGB Double
-sub = liftPx2 (-)
+sub = liftA2 (-)
 mul :: Double -> Pixel RGB Double -> Pixel RGB Double
-mul a = liftPx (a *)
+mul a = fmap (a *)
 
-boxBlur :: Int -> Int -> Image VU RGB Double -> IO (Image VU RGB Double)
+boxBlur :: Int -> Int -> Image U RGB Double -> IO (Image U RGB Double)
 boxBlur !r !passes img = let
-    myDims@(h, w) = dims img
+    myDims@(h :. w) = size img
     rows' = U.enumFromN (0 :: Int) h
     cols' = U.enumFromN (0 :: Int) w
 
@@ -69,23 +73,23 @@ boxBlur !r !passes img = let
             tmp2 <- U.freeze mv
             U.mapM_ (blur wrt rows' (flip ix1d') ixv tmp2) cols'
         out <- U.unsafeFreeze mv
-        return $ fromVector myDims out
+        return $ fromVector Par myDims out
 
-bloom :: Double -> Int -> Image VU RGB Double -> IO (Image VU RGB Double)
+bloom :: Double -> Int -> Image U RGB Double -> IO (Image U RGB Double)
 bloom strength divider img = do
-    let myDims@(_, w) = dims img
+    let myDims@(_ :. w) = size img
     blurred <- boxBlur (w `div` divider) 3 img
-    return . compute . makeImage myDims
+    return . makeArrayR U Par myDims
         $ \ix -> img `unsafeIndex` ix `add`
                  mul strength (blurred `unsafeIndex` ix)
 
-supersample :: Image VU RGB Double -> Image VU RGB Double
+supersample :: Image U RGB Double -> Image U RGB Double
 supersample img = let
-    (h, w) = dims img
+    h :. w = size img
     {-# INLINE pix #-}
-    pix y x = img `unsafeIndex` (y, x)
+    pix y x = img `unsafeIndex` (y :. x)
     {-# INLINE f #-}
-    f (y, x) = mul 0.25
+    f (y :. x) = mul 0.25
         $ pix (2*y) (2*x) `add` pix (2*y+1) (2*x) `add` pix (2*y) (2*x+1)
                           `add` pix (2*y+1) (2*x+1)
-    in makeImage (h `div` 2, w `div` 2) f
+    in makeArrayR U Par (Sz ((h `div` 2) :. (w `div` 2))) f
