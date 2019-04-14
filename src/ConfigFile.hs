@@ -1,8 +1,11 @@
-{-# LANGUAGE OverloadedStrings, FlexibleInstances, DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE StrictData #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ConfigFile
-    ( Scene( Scene, safeDistance, stepSize, bloomStrength, bloomDivider
+    ( Scene( Scene, stopThreshold, stepSize, bloomStrength, bloomDivider
            , starIntensity, starSaturation, supersampling
            , diskColor, diskOpacity, diskInner, diskOuter, resolution )
     , Camera( Camera, position, lookAt, upVec, fov )
@@ -11,47 +14,47 @@ module ConfigFile
 import Data.Aeson.Types
 import Linear
 import GHC.Generics
-import Graphics.ColorSpace
+import Data.Array.Accelerate.Data.Colour.HSL
 
 data Config = Config { scene :: Scene
                      , camera :: Camera }
                      deriving (Generic)
 
-data Scene = Scene { safeDistance :: !Double
-                   , stepSize :: !Double
-                   , bloomStrength :: !Double
-                   , bloomDivider :: !Int
-                   , starIntensity :: !Double
-                   , starSaturation :: !Double
-                   , diskColor :: !(Pixel HSI Double)
-                   , diskOpacity :: !Double
-                   , diskInner :: !Double
-                   , diskOuter :: !Double
-                   , resolution :: !(Int, Int)
-                   , supersampling :: !Bool }
+data Scene = Scene { stopThreshold :: Float
+                   , stepSize :: Float
+                   , bloomStrength :: Float
+                   , bloomDivider :: Int
+                   , starIntensity :: Float
+                   , starSaturation :: Float
+                   , diskColor :: HSL Float
+                   , diskOpacity :: Float
+                   , diskInner :: Float
+                   , diskOuter :: Float
+                   , resolution :: (Int, Int)
+                   , supersampling :: Bool }
                    deriving (Generic)
 
-data Camera = Camera { position :: !(V3 Double)
-                     , lookAt :: !(V3 Double)
-                     , upVec :: !(V3 Double)
-                     , fov :: !Double }
+data Camera = Camera { position :: V3 Float
+                     , lookAt :: V3 Float
+                     , upVec :: V3 Float
+                     , fov :: Float }
                      deriving (Generic)
 
-instance FromJSON (V3 Double) where
+instance FromJSON (V3 Float) where
     parseJSON vec = do
         [x, y, z] <- parseJSON vec
         return $ V3 x y z
 
-instance ToJSON (V3 Double) where
+instance ToJSON (V3 Float) where
     toJSON (V3 x y z) = toJSON [x, y, z]
 
-instance FromJSON (Pixel HSI Double) where
+instance FromJSON (HSL Float) where
     parseJSON hsi = do
-        [x, y, z] <- parseJSON hsi
-        return $ PixelHSI (x / 360) y z
+        [h, s, l] <- parseJSON hsi
+        return $ HSL h s l
 
-instance ToJSON (Pixel HSI Double) where
-    toJSON (PixelHSI h s i) = toJSON [360 * h, s, i]
+instance ToJSON (HSL Float) where
+    toJSON (HSL h s l) = toJSON [h, s, l]
 
 instance FromJSON Config
 
@@ -64,14 +67,14 @@ instance ToJSON Camera where
     toEncoding = genericToEncoding defaultOptions
 
 instance FromJSON Scene where
-    parseJSON (Object v) = Scene 0                        <$>
+    parseJSON (Object v) = Scene 0.95                     <$>
                            v .:? "stepSize"       .!= 0.3 <*>
                            v .:? "bloomStrength"  .!= 0.4 <*>
                            v .:? "bloomDivider"   .!= 25  <*>
                            v .:? "starIntensity"  .!= 0.7 <*>
                            v .:? "starSaturation" .!= 0.7 <*>
                            v .:? "diskColor"
-                             .!= PixelHSI 0.16 0.1 0.95   <*>
+                             .!= HSL 58 0.1 0.95   <*>
                            v .:? "diskOpacity"    .!= 0   <*>
                            v .:? "diskInner"      .!= 3   <*>
                            v .:? "diskOuter"      .!= 12  <*>

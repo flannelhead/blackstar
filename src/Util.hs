@@ -42,7 +42,7 @@ timeAction actionName value = do
 
 padZero :: Int -> Int -> String
 padZero maxVal val = let
-    nDigits x = (floor . logBase 10 $ (fromIntegral x :: Double)) + 1
+    nDigits x = (floor . logBase 10 $ (fromIntegral x :: Float)) + 1
     nZeros = nDigits maxVal - nDigits val
     zeros = replicate nZeros '0'
     in zeros ++ show val

@@ -20,7 +20,7 @@ main = do
                 Right stars -> do
                     putStrLn "Generating the star tree..."
                     tree <- timeAction "Building the tree"
-                        $ buildStarTree stars
+                        $ assembleStarGrid 10 stars
                     let treeBl = B.fromStrict $ treeToByteString tree
                     promptOverwriteFile outfile'
                         (\filename -> B.writeFile filename treeBl)

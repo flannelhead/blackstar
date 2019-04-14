@@ -1,133 +1,166 @@
-{-# LANGUAGE StrictData #-}
 {-# LANGUAGE Strict #-}
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE FlexibleContexts #-}
 
 module Raytracer (render, writeImg) where
 
-import Linear hiding (lookAt, mult, trace)
+import Codec.Picture
+import Control.Lens hiding (use)
+import Data.Array.Accelerate
+import Data.Array.Accelerate.LLVM.Native as CPU
+import Data.Array.Accelerate.Data.Colour.HSL as HSL
+import Data.Array.Accelerate.Data.Colour.RGB
+import Data.Array.Accelerate.Data.Colour.RGBA as RGBA
+import Data.Array.Accelerate.Data.Colour.SRGB as SRGB
+import Data.Array.Accelerate.Linear.Vector
+import Data.Array.Accelerate.Linear.Metric
+import Data.Array.Accelerate.Linear.Matrix
+import Data.Array.Accelerate.Linear.V3
+import Data.Array.Accelerate.IO.Codec.Picture
 import qualified Linear as L
-import Control.Lens
-import Data.Default
-import Data.List (foldl', scanl')
-import Data.Massiv.Array as A
-import Data.Massiv.Array.IO
-import Graphics.ColorSpace
-import Prelude as P
+import qualified Prelude as P
 
 import StarMap
+import StarMapLookup
 import ConfigFile
-import ImageFilters
 
-data Layer = Layer (Pixel RGBA Double) | Bottom (Pixel RGBA Double) | None
-data PhotonState = PhotonState (V3 Double) (V3 Double)
+type Position = V3 Float
+type Velocity = V3 Float
+type Acceleration = V3 Float
+type PhotonState = (Position, Velocity, Acceleration)
+type RaytracerState = (PhotonState, RGBA Float)
+type DiskParams = (RGBA Float, Float, Float, Float)
 
-sRGB :: Double -> Double
-sRGB x = let
-  a = 0.055
-  in if x < 0.0031308 then 12.92 * x
-    else (1 + a) * x ** (1.0 / 2.4) - a
+writeImg :: Image PixelRGB8 -> P.FilePath -> P.IO ()
+writeImg img path = writePng path img
 
-writeImg :: Image U RGB Double -> FilePath -> IO ()
-writeImg img path =
-    writeArray PNG def path
-      . A.map (toWord8 . fmap sRGB) $ img
+blend' :: P.Num a => RGBA a -> RGBA a -> RGBA a
+blend' src dst = let
+    RGBA sr sg sb sa = src
+    RGBA dr dg db da = dst
+    g s d = s + d * (1 - sa)
+    in RGBA (g sr dr) (g sg dg) (g sb db) (g sa da)
 
-blend :: Pixel RGBA Double -> Pixel RGBA Double -> Pixel RGBA Double
-blend (PixelRGBA tr tg tb ta) (PixelRGBA br bg bb ba) = let
-        a = ta + ba * (1 - ta)
-        comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
-     in PixelRGBA (comp tr br) (comp tg bg) (comp tb bb) a
+blend :: Exp (RGBA Float) -> Exp (RGBA Float) -> Exp (RGBA Float)
+blend = lift2 (blend' :: RGBA (Exp Float) -> RGBA (Exp Float) -> RGBA (Exp Float))
+
+diskColor' :: Exp DiskParams -> Exp Float -> Exp (RGBA Float)
+diskColor' (unlift -> (diskRGBA :: Exp (RGBA Float), rOuter, rInner, coef)) radius = let
+    RGBA r g b a = unlift diskRGBA
+    c = sin $ coef * ((rOuter - radius) ^ (2 :: Exp Int))
+    in radius > rInner && radius < rOuter ?
+           ( rgba (c * r) (c * g) (c * b) (c * a)
+           , rgba 0 0 0 0 )
+
+interpolateDiskRadius :: Exp Position -> Exp Position -> Exp Float
+interpolateDiskRadius pos newPos = let
+    y = pos ^. _y
+    yNew = newPos ^. _y
+    r = sqrt $ quadrance pos
+    rNew = sqrt $ quadrance newPos
+    in (yNew * r - y * rNew) / (yNew - y)
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Config -> Ix2 -> PhotonState
-generateRay cfg (y' :. x') = PhotonState vel pos
-    where cam = camera cfg
-          pos = position cam
-          scn = scene cfg
-          w = fromIntegral . fst $ resolution scn
-          h = fromIntegral . snd $ resolution scn
-          matr = L.lookAt pos (lookAt cam) (upVec cam) ^. _m33
-          vel  = L.normalize . (L.transpose matr !*)
-                 $ V3 (fov cam * (fromIntegral x' / w - 0.5))
-                      (fov cam * (0.5 - fromIntegral y' / h) * h/w)
-                      (-1)
-
-render :: Config -> StarTree -> Image U RGB Double
-render cfg startree = let
-    scn = scene cfg
+generateRay :: Config -> Exp DIM2 -> Exp RaytracerState
+generateRay cfg idx = let
+    Z :. y :. x = unlift idx
     cam = camera cfg
+    pos = position cam
+    scn = scene cfg
+    w = constant . P.fromIntegral . P.fst $ resolution scn
+    h = constant . P.fromIntegral . P.snd $ resolution scn
+    matr = constant . L.transpose $ L.lookAt pos (lookAt cam) (upVec cam) ^. L._m33
+    fov' = constant $ fov cam
+    vec = V3' (fov' * (fromIntegral x / w - 0.5))
+              (fov' * (0.5 - fromIntegral y / h) * h / w)
+              (-1)
+    pos' = constant pos
+    vel = normalize $ matr !* vec
+    accel = f (calculateh2 pos' vel) pos'
+    in lift ((pos', vel, accel), rgba 0 0 0 0)
+
+calculateh2 :: Exp Position -> Exp Velocity -> Exp Float
+calculateh2 pos vel = quadrance $ pos `cross` vel
+
+f :: Exp Float -> Exp Position -> Exp Acceleration
+f h2 x = -1.5 * h2 / (norm x ^ (5 :: Exp Int)) *^ x
+
+fst3 :: forall a b c. (Elt a, Elt b, Elt c) => Exp (a, b, c) -> Exp a
+fst3 t = let (x, _, _) = unlift t :: (Exp a, Exp b, Exp c)
+         in x
+
+integrate :: Exp Float -> Exp Float -> Exp PhotonState -> Exp PhotonState
+integrate h h2 photon = let
+    (pos, vel, accel) = unlift photon
+    posNext = pos + h *^ (vel + (h / 2) *^ accel)
+    accelNext = f h2 posNext
+    velNext = vel + (h / 2) *^ (accel + accelNext)
+    in lift (posNext, velNext, accelNext)
+
+rayStep :: Exp DiskParams -> Exp Float -> Exp Float -> Exp RaytracerState -> Exp RaytracerState
+rayStep diskParams h h2 raytracerState = let
+    (photonState, currentColor) = unlift raytracerState
+    newPhotonState = integrate h h2 photonState
+
+    newColor = let
+        pos = fst3 photonState
+        newPos = fst3 newPhotonState
+        in signum pos ^. _y /= signum newPos ^. _y ?
+              ( Raytracer.blend currentColor
+                  $ diskColor' diskParams (interpolateDiskRadius pos newPos)
+              , currentColor )
+
+    in lift (newPhotonState, newColor)
+
+traceRay :: Scene -> Exp RaytracerState -> Exp RaytracerState
+traceRay scn y = let
+    h = constant $ stepSize scn
+    h2 = let
+        (pos, vel, _ :: Exp Acceleration) = unlift $ fst y
+        in calculateh2 pos vel
+    dotMax = constant $ stopThreshold scn
+    rOuter = diskOuter scn
+    rInner = diskInner scn
+    diskCoef = P.pi P./ ((rOuter - rInner) P.^ (2 :: P.Int))
+    RGB r g b = unlift . HSL.toRGB . constant $ diskColor scn :: RGB (Exp Float)
+    diskRGBA = rgba r g b (constant $ diskOpacity scn)
+    diskParams = lift (diskRGBA, constant rOuter, constant rInner, constant diskCoef)
+
+    doContinue :: Exp RaytracerState -> Exp Bool
+    doContinue state = let
+        photon = fst state
+        (pos, vel, _ :: Exp Acceleration) = unlift photon
+        dotProd = (pos `dot` vel) / (norm pos * norm vel)
+        r2 = quadrance pos
+        in r2 >= 1 && dotProd < dotMax
+
+    in while doContinue (rayStep diskParams h h2) y
+
+convertColour :: Exp (RGBA Float) -> Exp PixelRGBA8
+convertColour (unlift . RGBA.clamp -> RGBA r g b _ :: RGBA (Exp Float)) = let
+    RGB r' g' b' = unlift . SRGB.toRGB . lift $ RGB r g b :: RGB (Exp Float)
+    in PixelRGBA8_ (round (255 * r'))
+                   (round (255 * g'))
+                   (round (255 * b'))
+                   255
+
+render :: Config -> StarGrid -> Image PixelRGB8
+render cfg stargrid = let
+    scn = scene cfg
     (w, h) = resolution scn
-    res@(w', h') = if supersampling scn then (2*w, 2*h) else (w, h)
-    scn' = scn { safeDistance =
-                   max (50^(2 :: Int)) (2 * quadrance (position cam))
-               , diskInner = diskInner scn ^ (2 :: Int)
-               , diskOuter = diskOuter scn ^ (2 :: Int)
-               , resolution = res }
-    cfg' = cfg { scene = scn' }
-    diskRGB = toPixelRGB $ diskColor scn
-    img = makeArrayR U Par (h' :. w') $ traceRay cfg' diskRGB startree :: Image U RGB Double
-    in if supersampling scn then supersample img else img
+    rays = generate (constant (Z :. h :. w)) (generateRay cfg)
 
-traceRay :: Config -> Pixel RGB Double -> StarTree -> Ix2
-            -> Pixel RGB Double
-traceRay cfg diskRGB startree pt = let
-        ray@(PhotonState vel pos) = generateRay cfg pt
-        h2 = quadrance $ pos `cross` vel
-        scn = scene cfg
-    in dropAlpha . colorize scn diskRGB startree h2 $ ray
+    StarGrid division searchindex stars = stargrid
+    lookup = starLookup (constant division) (use searchindex) (use stars)
+        (constant $ starIntensity scn) (constant $ starSaturation scn)
 
-colorize :: Scene -> Pixel RGB Double -> StarTree -> Double -> PhotonState
-            -> Pixel RGBA Double
-colorize scn diskRGB startree h2 crd = let
-    colorize' rgba crd' = let
-        newCrd = rk4 (stepSize scn) h2 crd'
-        in case findColor scn diskRGB startree crd' newCrd of
-            Layer rgba' -> colorize' (blend rgba rgba') newCrd
-            Bottom rgba' -> blend rgba rgba'
-            None -> colorize' rgba newCrd
-    in colorize' (PixelRGBA 0 0 0 0) crd
+    photonToRGBA state = let
+        (pos :: Exp (V3 Float), vel :: Exp (V3 Float), _ :: Exp (V3 Float)) = unlift $ fst state
+        bgColor = quadrance pos >= 1 ? (lookup vel, rgba 0 0 0 0)
+        in Raytracer.blend (snd state) bgColor
 
-findColor :: Scene -> Pixel RGB Double -> StarTree -> PhotonState -> PhotonState
-             -> Layer
-{-# INLINE findColor #-}
-findColor scn diskRGB startree (PhotonState vel pos@(V3 _ y _))
-    (PhotonState _ newPos@(V3 _ y' _))
-    | r2 < 1 = Bottom (PixelRGBA 0 0 0 1)  -- already passed the event horizon
-    | r2 > safeDistance scn = Bottom . addAlpha 1.0
-        $ starLookup startree (starIntensity scn) (starSaturation scn) vel
-    | diskOpacity scn /= 0 && signum y' /= signum y
-        && r2ave > diskInner scn && r2ave < diskOuter scn
-        = Layer $ diskColor' scn diskRGB (sqrt r2ave)
-    | otherwise = None
-    where r2 = quadrance pos
-          r2' = quadrance newPos
-          r2ave = (y'*r2 - y*r2') / (y' - y)
+    final = map (convertColour . photonToRGBA . traceRay scn) rays
 
-diskColor' :: Scene -> Pixel RGB Double -> Double -> Pixel RGBA Double
-{-# INLINE diskColor' #-}
-diskColor' scn diskRGB r = let
-        rInner = sqrt (diskInner scn)
-        rOuter = sqrt (diskOuter scn)
-        alpha = sin (pi * ((rOuter-r) / (rOuter-rInner))^(2 :: Int))
-    in addAlpha (alpha * diskOpacity scn) diskRGB
-
-rk4 :: Double -> Double -> PhotonState -> PhotonState
-{-# INLINE rk4 #-}
-rk4 h h2 y = let
-        mul :: PhotonState -> Double -> PhotonState
-        {-# INLINE mul #-}
-        mul (PhotonState u v) a = PhotonState (u ^* a) (v ^* a)
-
-        add :: PhotonState -> PhotonState -> PhotonState
-        {-# INLINE add #-}
-        add (PhotonState x z) (PhotonState u v) = PhotonState (x ^+^ u) (z ^+^ v)
-
-        f :: PhotonState -> PhotonState
-        {-# INLINE f #-}
-        f (PhotonState vel pos) =
-            PhotonState (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos) vel
-
-        g :: PhotonState -> Double -> PhotonState
-        {-# INLINE g #-}
-        g k c = f . add y $ mul k c
-    in foldl' add y $ P.zipWith mul (scanl' g (f y) [h/2, h/2, h])
-           [(h/6), (h/3), (h/3), (h/6)]
+    in convertRGB8 . ImageRGBA8 . imageOfArray $ CPU.run final

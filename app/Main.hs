@@ -14,7 +14,6 @@ import System.Console.ANSI (clearScreen, setCursorPosition)
 import Raytracer
 import StarMap
 import ConfigFile
-import ImageFilters
 import Util
 
 data Blackstar = Blackstar { preview :: Bool
@@ -49,7 +48,7 @@ main = do
             >> doStart cmdline tree
         Left  err  -> putStrLn $ "Error decoding star tree: \n" ++ err
 
-doStart :: Blackstar -> StarTree -> IO ()
+doStart :: Blackstar -> StarGrid -> IO ()
 doStart cmdline tree = do
     -- Resolve the output directory
     when (output cmdline /= "")
@@ -77,7 +76,7 @@ doStart cmdline tree = do
                 handleScene cmdline tree outdir scn
         else handleScene cmdline tree outdir filename
 
-handleScene :: Blackstar -> StarTree -> String -> String -> IO ()
+handleScene :: Blackstar -> StarGrid -> String -> String -> IO ()
 handleScene cmdline tree outdir filename = do
     let pvw = preview cmdline
     let sceneName = takeBaseName filename
@@ -102,24 +101,16 @@ prepareScene cfg doPreview = let
                           else scn
     in cfg { scene = newScn }
 
-doRender :: Blackstar -> Config -> StarTree -> String -> String -> IO ()
+doRender :: Blackstar -> Config -> StarGrid -> String -> String -> IO ()
 doRender cmdline cfg tree sceneName outdir = do
     putStrLn $ "Rendering " ++ sceneName ++ "..."
-    let scn = scene cfg
     img <- timeAction "Rendering" $ render cfg tree
 
     let outName = outdir </> sceneName <.> ".png"
 
-    final <- if bloomStrength scn /= 0
-        then do
-            putStrLn "Applying bloom..."
-            bloomed <- bloom (bloomStrength scn) (bloomDivider scn) img
-            timeAction "Bloom" bloomed
-        else return img
-
     putStrLn $ "Saving to " ++ outName ++ "..."
     if force cmdline
-      then writeImg final outName
-      else promptOverwriteFile outName (writeImg final)
+      then writeImg img outName
+      else promptOverwriteFile outName (writeImg img)
 
     putStrLn "Everything done. Thank you!"
