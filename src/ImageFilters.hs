@@ -1,4 +1,6 @@
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE StrictData #-}
+{-# LANGUAGE Strict #-}
 
 module ImageFilters (bloom, supersample) where
 
