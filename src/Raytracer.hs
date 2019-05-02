@@ -5,9 +5,9 @@ module Raytracer (render, writeImg) where
 
 import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
+import Control.Applicative
 import Control.Lens
 import Data.Default
-import Data.List (foldl', scanl')
 import Data.Massiv.Array as A
 import Data.Massiv.Array.IO
 import Graphics.ColorSpace
@@ -32,10 +32,9 @@ writeImg img path =
       . A.map (toWord8 . fmap sRGB) $ img
 
 blend :: Pixel RGBA Double -> Pixel RGBA Double -> Pixel RGBA Double
-blend (PixelRGBA tr tg tb ta) (PixelRGBA br bg bb ba) = let
-        a = ta + ba * (1 - ta)
-        comp tc bc = if a == 0 then 0 else (tc*ta + bc*ba*(1-ta)) / a
-     in PixelRGBA (comp tr br) (comp tg bg) (comp tb bb) a
+blend src@(PixelRGBA _ _ _ ta) = let
+    comp tc bc = tc + bc * (1 - ta)
+    in liftA2 comp src
 
 -- Generate the sight rays ie. initial conditions for the integration
 generateRay :: Config -> Ix2 -> PhotonState
@@ -105,29 +104,31 @@ findColor scn diskRGB startree (PhotonState vel pos@(V3 _ y _))
 diskColor' :: Scene -> Pixel RGB Double -> Double -> Pixel RGBA Double
 {-# INLINE diskColor' #-}
 diskColor' scn diskRGB r = let
-        rInner = sqrt (diskInner scn)
-        rOuter = sqrt (diskOuter scn)
-        alpha = sin (pi * ((rOuter-r) / (rOuter-rInner))^(2 :: Int))
-    in addAlpha (alpha * diskOpacity scn) diskRGB
+    rInner = sqrt (diskInner scn)
+    rOuter = sqrt (diskOuter scn)
+    intensity = sin (pi * ((rOuter - r) / (rOuter - rInner)) ^ (2 :: Int))
+    rgb = fmap (* intensity) diskRGB
+    in addAlpha (intensity * diskOpacity scn) rgb
 
 rk4 :: Double -> Double -> PhotonState -> PhotonState
 {-# INLINE rk4 #-}
 rk4 h h2 y = let
-        mul :: PhotonState -> Double -> PhotonState
-        {-# INLINE mul #-}
-        mul (PhotonState u v) a = PhotonState (u ^* a) (v ^* a)
+    mul :: Double -> PhotonState -> PhotonState
+    {-# INLINE mul #-}
+    mul a (PhotonState u v) = PhotonState (u ^* a) (v ^* a)
 
-        add :: PhotonState -> PhotonState -> PhotonState
-        {-# INLINE add #-}
-        add (PhotonState x z) (PhotonState u v) = PhotonState (x ^+^ u) (z ^+^ v)
+    add :: PhotonState -> PhotonState -> PhotonState
+    {-# INLINE add #-}
+    add (PhotonState x z) (PhotonState u v) = PhotonState (x ^+^ u) (z ^+^ v)
 
-        f :: PhotonState -> PhotonState
-        {-# INLINE f #-}
-        f (PhotonState vel pos) =
-            PhotonState (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos) vel
+    f :: PhotonState -> PhotonState
+    {-# INLINE f #-}
+    f (PhotonState vel pos) =
+        PhotonState (-1.5*h2 / (norm pos ^ (5 :: Int)) *^ pos) vel
 
-        g :: PhotonState -> Double -> PhotonState
-        {-# INLINE g #-}
-        g k c = f . add y $ mul k c
-    in foldl' add y $ P.zipWith mul (scanl' g (f y) [h/2, h/2, h])
-           [(h/6), (h/3), (h/3), (h/6)]
+    k1 = f y 
+    k2 = f $ y `add` mul (h / 2) k1
+    k3 = f $ y `add` mul (h / 2) k2
+    k4 = f $ y `add` mul h k3
+    sumK = k1 `add` mul 2 k2 `add` mul 2 k3 `add` k4
+    in y `add` mul (h / 6) sumK
