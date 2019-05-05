@@ -15,12 +15,12 @@ scene:
     starIntensity: 0.4   # The intensity (0 = black, 1 = white) of the stars
     starSaturation: 1.5  # The color saturation of the stars
 
-    diskOpacity: 0.95  # Opacity of the accretion disk (0 = fully transparent,
+    diskOpacity: 0.2   # Opacity of the accretion disk (0 = fully transparent,
                        # 1 = fully opaque)
-    diskInner: 1.8     # The inner radius of the accretion disk
-    diskOuter: 13      # The outer radius of the accretion disk
-    diskColor: [180, 0.1, 1.05]  # The colour of the accretion disk in the HSI color space.
-                                 # H: 0..360, S: 0..1, I: 0..1
+    diskInner:  2      # The inner radius of the accretion disk
+    diskOuter: 12      # The outer radius of the accretion disk
+    diskColor: [180, 0.1, 0.9]  # The colour of the accretion disk in the HSI color space.
+                                # H: 0..360, S: 0..1, I: 0..1
 
     supersampling: false  # Set this to true to enable smoothing by supersampling
                           # a 4x sized image
