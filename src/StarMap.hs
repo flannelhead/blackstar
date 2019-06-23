@@ -10,9 +10,9 @@ module StarMap
     ( Star, StarGrid(..), Range, SearchIndex
     , readMapFromFile
     , makeMapFromPPM
-    , treeToByteString
+    , gridToByteString
     , assembleStarGrid
-    , readTreeFromFile
+    , readGridFromFile
     ) where
 
 import Control.Monad
@@ -89,13 +89,13 @@ makeMapFromPPM path = do
     ppm <- readMapFromFile path
     return $ ppm >>= return . assembleStarGrid 10
 
-readTreeFromFile :: FilePath -> IO (Either String StarGrid)
-readTreeFromFile path = do
+readGridFromFile :: FilePath -> IO (Either String StarGrid)
+readGridFromFile path = do
     ebs <- readSafe path
     return . fmap convertMagnitudes $ S.decode =<< ebs
 
-treeToByteString :: StarGrid -> B.ByteString
-treeToByteString = S.encode
+gridToByteString :: StarGrid -> B.ByteString
+gridToByteString = S.encode
 
 -- Some nice colour values for different spectral types
 starColor :: Char -> (Float, Float)

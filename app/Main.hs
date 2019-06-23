@@ -19,7 +19,7 @@ import Util
 data Blackstar = Blackstar { preview :: Bool
                            , output :: String
                            , force :: Bool
-                           , starmap :: String
+                           , starmapPath :: String
                            , inputfile :: String }
                            deriving (Show, Data, Typeable)
 
@@ -31,7 +31,7 @@ argparser = Blackstar { preview = def
                           &= typ "PATH"
                       , force = def
                           &= help "overwrite images without asking"
-                      , starmap = "stars.kdt"
+                      , starmapPath = "stars.bin"
                           &= help "path to starmap"
                           &= typ "PATH"
                       , inputfile = def
@@ -42,14 +42,14 @@ argparser = Blackstar { preview = def
 main :: IO ()
 main = do
     cmdline <- cmdArgs argparser
-    etree <- readTreeFromFile $ starmap cmdline
-    case etree of
-        Right tree -> putStrLn "Starmap successfully read."
-            >> doStart cmdline tree
-        Left  err  -> putStrLn $ "Error decoding star tree: \n" ++ err
+    eitherStarmap <- readGridFromFile $ starmapPath cmdline
+    case eitherStarmap of
+        Right starmap -> putStrLn "Starmap successfully read."
+            >> doStart cmdline starmap
+        Left  err  -> putStrLn $ "Error decoding star map: \n" ++ err
 
 doStart :: Blackstar -> StarGrid -> IO ()
-doStart cmdline tree = do
+doStart cmdline starmap = do
     -- Resolve the output directory
     when (output cmdline /= "")
         $ createDirectoryIfMissing True (output cmdline)
@@ -73,11 +73,11 @@ doStart cmdline tree = do
                 setCursorPosition 0 0
                 putStrLn $ "Batch mode progress: " ++ show idx ++ "/"
                     ++ show (length inputFiles)
-                handleScene cmdline tree outdir scn
-        else handleScene cmdline tree outdir filename
+                handleScene cmdline starmap outdir scn
+        else handleScene cmdline starmap outdir filename
 
 handleScene :: Blackstar -> StarGrid -> String -> String -> IO ()
-handleScene cmdline tree outdir filename = do
+handleScene cmdline starmap outdir filename = do
     let pvw = preview cmdline
     let sceneName = takeBaseName filename
     putStrLn $ "Reading " ++ filename ++ "..."
@@ -85,7 +85,7 @@ handleScene cmdline tree outdir filename = do
     let sceneName' = if pvw then "prev-" ++ sceneName else sceneName
     case cfg of
         Right config -> putStrLn "Scene successfully read."
-                          >> doRender cmdline (prepareScene config pvw) tree
+                          >> doRender cmdline (prepareScene config pvw) starmap
                                sceneName' outdir
         Left  err    -> putStrLn $ prettyPrintParseException err
 
@@ -102,9 +102,9 @@ prepareScene cfg doPreview = let
     in cfg { scene = newScn }
 
 doRender :: Blackstar -> Config -> StarGrid -> String -> String -> IO ()
-doRender cmdline cfg tree sceneName outdir = do
+doRender cmdline cfg starmap sceneName outdir = do
     putStrLn $ "Rendering " ++ sceneName ++ "..."
-    img <- timeAction "Rendering" $ render cfg tree
+    img <- timeAction "Rendering" $ render cfg starmap
 
     let outName = outdir </> sceneName <.> ".png"
 

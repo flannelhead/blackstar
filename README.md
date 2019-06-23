@@ -20,7 +20,7 @@ It is a tribute to David Bowie, referring to his last album.
 ## Building
 Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
-This repository includes a star lookup tree (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt tree in binary form is included for convenience, but you can also build it yourself. First, remove `stars.kdt`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-tree PPM stars.kdt` and the tree will be generated and saved.
+This repository includes a star lookup map (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt map in binary form is included for convenience, but you can also build it yourself. First, remove `stars.bin`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM stars.bin` and the map will be generated and saved.
 
 ### Speeding it up with LLVM
 When doing large or batch renders, it is recommended to build `blackstar` using GHC's LLVM backend. GHC produces LLVM bytecode and LLVM produces fast native code from GHC's output. In my tests I've noticed ~1.5x speedups.

@@ -72,9 +72,9 @@ executable animate
                      , filepath
   default-language:    Haskell2010
 
-executable generate-tree
+executable generate-starmap
   hs-source-dirs:      app
-  main-is:             GenerateTree.hs
+  main-is:             GenerateStarMap.hs
   ghc-options:         -Wall
   build-depends:       base
                      , blackstar
