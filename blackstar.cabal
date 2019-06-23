@@ -80,6 +80,7 @@ executable generate-tree
                      , blackstar
                      , directory
                      , bytestring
+                     , cmdargs
   default-language:    Haskell2010
 
 source-repository head
