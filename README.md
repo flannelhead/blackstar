@@ -18,23 +18,11 @@ A black hole ray tracer written in Haskell. There's [an article](https://flannel
 It is a tribute to David Bowie, referring to his last album.
 
 ## Building
-Use [`stack`](http://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
+First, install [LLVM 8.0.0](https://llvm.org/releases/download.html#8.0.0) on your operating system and ensure it is available in `PATH`. This is required by the [Accelerate](https://www.acceleratehs.org/) library, which is used for the computationally intense parts of the code.
 
-This repository includes a star lookup map (`stars.kdt`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt map in binary form is included for convenience, but you can also build it yourself. First, remove `stars.bin`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM stars.bin` and the map will be generated and saved.
+Use [`stack`](https://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
-### Speeding it up with LLVM
-When doing large or batch renders, it is recommended to build `blackstar` using GHC's LLVM backend. GHC produces LLVM bytecode and LLVM produces fast native code from GHC's output. In my tests I've noticed ~1.5x speedups.
-
-The LLVM backend isn't used by default since one needs to install (and usually build) a specific version of LLVM separately. Moreover, the build time is significantly higher with LLVM, so one doesn't definitely want to use it while hacking on the code.
-
-To successfully build with LLVM, you need to:
-
-* Download and [build](http://llvm.org/docs/GettingStarted.html#getting-started-quickly-a-summary) [LLVM 6.0.1](http://llvm.org/releases/download.html#6.0.1). You can skip the Clang parts. After the build, you should make sure the tools `llc` and `opt` are found in your `PATH`. Notice that these aren't included in the prebuilt LLVM binaries, that's why you'll need to build it.
-* Build `blackstar` with `stack build --ghc-options -fllvm`. (If you've just built it, run `stack clean` first to ensure it really gets rebuilt with LLVM.)
-* Wait patiently
-* Enjoy the result!
-
-You don't necessarily have to use LLVM at all. However, if you can acquire binaries of the right LLVM version, that will give you some speedups.
+This repository includes a star lookup map (`stars.bin`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt map in binary form is included for convenience, but you can also build it yourself. First, remove `stars.bin`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM stars.bin` and the map will be generated and saved.
 
 ## Usage
 When `blackstar` has been built with `stack`, you can run it with
@@ -54,7 +42,7 @@ Scenes are defined using YAML config files. Look in the `scenes` folder for exam
 ```
 stack exec blackstar -- scenes/default.yaml --output output
 ```
-in the root directory of the project. The `--output` flag specifies the output directory. By default, `blackstar` searches for a starmap in the path `./stars.kdt`, but a different path can be specified using the `--starmap` flag.
+in the root directory of the project. The `--output` flag specifies the output directory. By default, `blackstar` searches for a starmap in the path `./stars.bin`, but a different path can be specified using the `--starmap` flag.
 
 The rendered files are named `scenename.png` and `scenename-bloomed.png`. The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters. The `--force` flag will cause `blackstar` to overwrite output images without a prompt.
 
