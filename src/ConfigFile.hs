@@ -1,19 +1,27 @@
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE StrictData #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module ConfigFile
     ( Scene( Scene, stopThreshold, stepSize, bloomStrength, bloomDivider
            , starIntensity, starSaturation, supersampling
            , diskColor, diskOpacity, diskInner, diskOuter, resolution )
+    , pattern Scene_, stopThreshold_, stepSize_, bloomStrength_
+    , bloomDivider_, starIntensity_, starSaturation_, diskColor_
+    , diskOpacity_, diskInner_, diskOuter_, resolution_, supersampling_
     , Camera( Camera, position, lookAt, upVec, fov )
+    , pattern Camera_, position_, lookAt_, upVec_, fov_
     , Config( Config, camera, scene ) ) where
 
 import Data.Aeson.Types
 import Linear
 import GHC.Generics
+import Data.Array.Accelerate (Elt, Exp, IsTuple, pattern Pattern)
+import Data.Array.Accelerate.Linear.V3()
 import Data.Array.Accelerate.Data.Colour.HSL
 
 data Config = Config { scene :: Scene
@@ -32,13 +40,49 @@ data Scene = Scene { stopThreshold :: Float
                    , diskOuter :: Float
                    , resolution :: (Int, Int)
                    , supersampling :: Bool }
-                   deriving (Generic)
+                   deriving (Generic, Elt, Show, IsTuple)
+
+pattern Scene_ :: Exp Float -> Exp Float -> Exp Float
+                  -> Exp Int -> Exp Float -> Exp Float
+                  -> Exp (HSL Float) -> Exp Float -> Exp Float
+                  -> Exp Float -> Exp (Int, Int) -> Exp Bool
+                  -> Exp Scene
+pattern Scene_ { stopThreshold_
+               , stepSize_
+               , bloomStrength_
+               , bloomDivider_
+               , starIntensity_
+               , starSaturation_
+               , diskColor_
+               , diskOpacity_
+               , diskInner_
+               , diskOuter_
+               , resolution_
+               , supersampling_
+               } = Pattern
+               ( stopThreshold_
+               , stepSize_
+               , bloomStrength_
+               , bloomDivider_
+               , starIntensity_
+               , starSaturation_
+               , diskColor_
+               , diskOpacity_
+               , diskInner_
+               , diskOuter_
+               , resolution_
+               , supersampling_ )
 
 data Camera = Camera { position :: V3 Float
                      , lookAt :: V3 Float
                      , upVec :: V3 Float
                      , fov :: Float }
-                     deriving (Generic)
+                     deriving (Generic, Elt, Show, IsTuple)
+
+pattern Camera_ :: Exp (V3 Float) -> Exp (V3 Float)
+                   -> Exp (V3 Float) -> Exp Float
+                   -> Exp Camera
+pattern Camera_ { position_, lookAt_, upVec_, fov_ } = Pattern (position_, lookAt_, upVec_, fov_)
 
 instance FromJSON (V3 Float) where
     parseJSON vec = do

@@ -4,7 +4,7 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Raytracer (render, writeImg) where
+module Raytracer (render, writeImg, BlackstarProgram, compile) where
 
 import Codec.Picture
 import Control.Lens hiding (use)
@@ -16,10 +16,11 @@ import Data.Array.Accelerate.Data.Colour.RGBA as RGBA
 import Data.Array.Accelerate.Data.Colour.SRGB as SRGB
 import Data.Array.Accelerate.Linear.Vector
 import Data.Array.Accelerate.Linear.Metric
-import Data.Array.Accelerate.Linear.Matrix
+import Data.Array.Accelerate.Linear.Matrix as M
+import Data.Array.Accelerate.Linear.Projection as LP
 import Data.Array.Accelerate.Linear.V3
+import Data.Array.Accelerate.Linear.V4
 import Data.Array.Accelerate.IO.Codec.Picture
-import qualified Linear as L
 import qualified Prelude as P
 
 import StarMap
@@ -32,6 +33,7 @@ type Acceleration = V3 Float
 type PhotonState = (Position, Velocity, Acceleration)
 type RaytracerState = (PhotonState, RGBA Float)
 type DiskParams = (RGBA Float, Float, Float, Float)
+type BlackstarProgram = Scalar Scene -> Scalar Camera -> Matrix PixelRGBA8
 
 writeImg :: Image PixelRGB8 -> P.FilePath -> P.IO ()
 writeImg img path = writePng path img
@@ -63,23 +65,21 @@ interpolateDiskRadius pos newPos = let
     in (yNew * r - y * rNew) / (yNew - y)
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Config -> Exp DIM2 -> Exp RaytracerState
-generateRay cfg idx = let
+generateRay :: Exp (Int, Int) -> Exp Camera -> Exp DIM2 -> Exp RaytracerState
+generateRay (unlift -> (w', h') :: (Exp Int, Exp Int)) cam idx = let
+    w = fromIntegral w'
+    h = fromIntegral h'
     Z :. y :. x = unlift idx
-    cam = camera cfg
-    pos = position cam
-    scn = scene cfg
-    w = constant . P.fromIntegral . P.fst $ resolution scn
-    h = constant . P.fromIntegral . P.snd $ resolution scn
-    matr = constant . L.transpose $ L.lookAt pos (lookAt cam) (upVec cam) ^. L._m33
-    fov' = constant $ fov cam
-    vec = V3' (fov' * (fromIntegral x / w - 0.5))
+    fov' = fov_ cam
+    pos = position_ cam
+    matr = M.transpose $ LP.lookAt pos (lookAt_ cam) (upVec_ cam)
+    vec = V4' (fov' * (fromIntegral x / w - 0.5))
               (fov' * (0.5 - fromIntegral y / h) * h / w)
               (-1)
-    pos' = constant pos
-    vel = normalize $ matr !* vec
-    accel = f (calculateh2 pos' vel) pos'
-    in lift ((pos', vel, accel), rgba 0 0 0 0)
+              0
+    vel = normalize $ (matr !* vec) ^. _xyz
+    accel = f (calculateh2 pos vel) pos
+    in lift ((pos, vel, accel), rgba 0 0 0 0)
 
 calculateh2 :: Exp Position -> Exp Velocity -> Exp Float
 calculateh2 pos vel = quadrance $ pos `cross` vel
@@ -114,19 +114,19 @@ rayStep diskParams h h2 raytracerState = let
 
     in lift (newPhotonState, newColor)
 
-traceRay :: Scene -> Exp RaytracerState -> Exp RaytracerState
+traceRay :: Exp Scene -> Exp RaytracerState -> Exp RaytracerState
 traceRay scn y = let
-    h = constant $ stepSize scn
+    h = stepSize_ scn
     h2 = let
         (pos, vel, _ :: Exp Acceleration) = unlift $ fst y
         in calculateh2 pos vel
-    dotMax = constant $ stopThreshold scn
-    rOuter = diskOuter scn
-    rInner = diskInner scn
-    diskCoef = P.pi P./ ((rOuter - rInner) P.^ (2 :: P.Int))
-    RGB r g b = unlift . HSL.toRGB . constant $ diskColor scn :: RGB (Exp Float)
-    diskRGBA = rgba r g b (constant $ diskOpacity scn)
-    diskParams = lift (diskRGBA, constant rOuter, constant rInner, constant diskCoef)
+    dotMax = stopThreshold_ scn
+    rOuter = diskOuter_ scn
+    rInner = diskInner_ scn
+    diskCoef = pi / ((rOuter - rInner) ^ (2 :: Exp Int))
+    RGB r g b = unlift . HSL.toRGB $ diskColor_ scn :: RGB (Exp Float)
+    diskRGBA = rgba r g b (diskOpacity_ scn)
+    diskParams = lift (diskRGBA, rOuter, rInner, diskCoef)
 
     doContinue :: Exp RaytracerState -> Exp Bool
     doContinue state = let
@@ -146,21 +146,30 @@ convertColour (unlift . RGBA.clamp -> RGBA r g b _ :: RGBA (Exp Float)) = let
                    (round (255 * b'))
                    255
 
-render :: Config -> StarGrid -> Image PixelRGB8
-render cfg stargrid = let
-    scn = scene cfg
-    (w, h) = resolution scn
-    rays = generate (constant (Z :. h :. w)) (generateRay cfg)
+program :: StarGrid -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
+program stargrid scn' cam' = let
+    scn = the scn'
+    cam = the cam'
+    res = resolution_ scn
+    (w, h) = unlift res
+    rays = generate (index2 h w) (generateRay res cam)
 
     StarGrid division searchindex stars = stargrid
     lookup = starLookup (constant division) (use searchindex) (use stars)
-        (constant $ starIntensity scn) (constant $ starSaturation scn)
+        (starIntensity_ scn) (starSaturation_ scn)
 
     photonToRGBA state = let
         (pos :: Exp (V3 Float), vel :: Exp (V3 Float), _ :: Exp (V3 Float)) = unlift $ fst state
         bgColor = quadrance pos >= 1 ? (lookup vel, rgba 0 0 0 0)
         in Raytracer.blend (snd state) bgColor
 
-    final = map (convertColour . photonToRGBA . traceRay scn) rays
+    in map (convertColour . photonToRGBA . traceRay scn) rays
 
-    in convertRGB8 . ImageRGBA8 . imageOfArray $ CPU.run final
+compile :: StarGrid -> BlackstarProgram
+compile grid = CPU.runN $ program grid
+
+toArr :: Elt a => a -> Scalar a
+toArr x = fromList Z [x]
+
+render :: BlackstarProgram -> Scene -> Camera -> Image PixelRGB8
+render prog scn cam = convertRGB8 . ImageRGBA8 . imageOfArray $ prog (toArr scn) (toArr cam)

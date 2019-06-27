@@ -1,3 +1,4 @@
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# OPTIONS_GHC -fno-cse #-}
 
@@ -50,6 +51,7 @@ main = do
 
 doStart :: Blackstar -> StarGrid -> IO ()
 doStart cmdline starmap = do
+    let prog = compile starmap
     -- Resolve the output directory
     when (output cmdline /= "")
         $ createDirectoryIfMissing True (output cmdline)
@@ -73,11 +75,11 @@ doStart cmdline starmap = do
                 setCursorPosition 0 0
                 putStrLn $ "Batch mode progress: " ++ show idx ++ "/"
                     ++ show (length inputFiles)
-                handleScene cmdline starmap outdir scn
-        else handleScene cmdline starmap outdir filename
+                handleScene cmdline prog outdir scn
+        else handleScene cmdline prog outdir filename
 
-handleScene :: Blackstar -> StarGrid -> String -> String -> IO ()
-handleScene cmdline starmap outdir filename = do
+handleScene :: Blackstar -> BlackstarProgram -> String -> String -> IO ()
+handleScene cmdline prog outdir filename = do
     let pvw = preview cmdline
     let sceneName = takeBaseName filename
     putStrLn $ "Reading " ++ filename ++ "..."
@@ -85,7 +87,7 @@ handleScene cmdline starmap outdir filename = do
     let sceneName' = if pvw then "prev-" ++ sceneName else sceneName
     case cfg of
         Right config -> putStrLn "Scene successfully read."
-                          >> doRender cmdline (prepareScene config pvw) starmap
+                          >> doRender cmdline (prepareScene config pvw) prog
                                sceneName' outdir
         Left  err    -> putStrLn $ prettyPrintParseException err
 
@@ -101,10 +103,10 @@ prepareScene cfg doPreview = let
                           else scn
     in cfg { scene = newScn }
 
-doRender :: Blackstar -> Config -> StarGrid -> String -> String -> IO ()
-doRender cmdline cfg starmap sceneName outdir = do
+doRender :: Blackstar -> Config -> BlackstarProgram -> String -> String -> IO ()
+doRender cmdline cfg !prog sceneName outdir = do
     putStrLn $ "Rendering " ++ sceneName ++ "..."
-    img <- timeAction "Rendering" $ render cfg starmap
+    img <- timeAction "Rendering" $ render prog (scene cfg) (camera cfg)
 
     let outName = outdir </> sceneName <.> ".png"
 
