@@ -18,6 +18,7 @@ import Data.Array.Accelerate.Linear.Vector
 import Data.Array.Accelerate.Linear.Metric
 import Data.Array.Accelerate.Linear.Matrix as M
 import Data.Array.Accelerate.Linear.Projection as LP
+import Data.Array.Accelerate.Linear.V2
 import Data.Array.Accelerate.Linear.V3
 import Data.Array.Accelerate.Linear.V4
 import Data.Array.Accelerate.IO.Codec.Picture
@@ -65,16 +66,17 @@ interpolateDiskRadius pos newPos = let
     in (yNew * r - y * rNew) / (yNew - y)
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Exp (Int, Int) -> Exp Camera -> Exp DIM2 -> Exp RaytracerState
-generateRay (unlift -> (w', h') :: (Exp Int, Exp Int)) cam idx = let
+generateRay :: Exp (Int, Int) -> Exp Camera -> Exp (V2 Float) -> Exp DIM2 -> Exp RaytracerState
+generateRay (unlift -> (w', h') :: (Exp Int, Exp Int)) cam offset idx = let
     w = fromIntegral w'
     h = fromIntegral h'
     Z :. y :. x = unlift idx
+    V2' xOff yOff = unlift offset
     fov' = fov_ cam
     pos = position_ cam
     matr = M.transpose $ LP.lookAt pos (lookAt_ cam) (upVec_ cam)
-    vec = V4' (fov' * (fromIntegral x / w - 0.5))
-              (fov' * (0.5 - fromIntegral y / h) * h / w)
+    vec = V4' (fov' * ((fromIntegral x + xOff) / w - 0.5))
+              (fov' * (0.5 - (fromIntegral y + yOff) / h) * h / w)
               (-1)
               0
     vel = normalize $ (matr !* vec) ^. _xyz
@@ -146,13 +148,19 @@ convertColour (unlift . RGBA.clamp -> RGBA r g b _ :: RGBA (Exp Float)) = let
                    (round (255 * b'))
                    255
 
+programInner :: (Exp RaytracerState -> Exp (RGBA Float)) -> Exp Scene
+                -> Exp Camera -> Exp (V2 Float) -> Acc (Matrix (RGBA Float))
+programInner photonToRGBA scn cam offset = let
+    res = resolution_ scn
+    (w, h) = unlift res
+    rays = generate (index2 h w) (generateRay res cam offset)
+
+    in map (photonToRGBA . traceRay scn) rays
+
 program :: StarGrid -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
 program stargrid scn' cam' = let
     scn = the scn'
     cam = the cam'
-    res = resolution_ scn
-    (w, h) = unlift res
-    rays = generate (index2 h w) (generateRay res cam)
 
     StarGrid division searchindex stars = stargrid
     lookup = starLookup (constant division) (use searchindex) (use stars)
@@ -163,7 +171,16 @@ program stargrid scn' cam' = let
         bgColor = quadrance pos >= 1 ? (lookup vel, rgba 0 0 0 0)
         in Raytracer.blend (snd state) bgColor
 
-    in map (convertColour . photonToRGBA . traceRay scn) rays
+    inner xOff yOff = programInner photonToRGBA scn cam $ V2' xOff yOff
+    sumOf4 a b c d = 0.25 * (a + b + c + d)
+    img = supersampling_ scn ?|
+        ( zipWith4 sumOf4
+            (inner (-0.5) 0.75)
+            (inner (-0.25) (-0.5))
+            (inner 0.5 (-0.25))
+            (inner 0.75 0.5)
+        , inner 0 0 )
+    in map convertColour img
 
 compile :: StarGrid -> BlackstarProgram
 compile grid = CPU.runN $ program grid
