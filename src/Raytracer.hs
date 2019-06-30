@@ -66,20 +66,16 @@ interpolateDiskRadius pos newPos = let
     in (yNew * r - y * rNew) / (yNew - y)
 
 -- Generate the sight rays ie. initial conditions for the integration
-generateRay :: Exp (Int, Int) -> Exp Camera -> Exp (V2 Float) -> Exp DIM2 -> Exp RaytracerState
-generateRay (unlift -> (w', h') :: (Exp Int, Exp Int)) cam offset idx = let
-    w = fromIntegral w'
-    h = fromIntegral h'
+generateRay :: Exp (Float, Float) -> Exp Float -> Exp (M44 Float) -> Exp (V3 Float)
+               -> Exp (V2 Float) -> Exp DIM2 -> Exp RaytracerState
+generateRay (unlift -> (w, h) :: (Exp Float, Exp Float)) fov' proj pos offset idx = let
     Z :. y :. x = unlift idx
     V2' xOff yOff = unlift offset
-    fov' = fov_ cam
-    pos = position_ cam
-    matr = M.transpose $ LP.lookAt pos (lookAt_ cam) (upVec_ cam)
     vec = V4' (fov' * ((fromIntegral x + xOff) / w - 0.5))
               (fov' * (0.5 - (fromIntegral y + yOff) / h) * h / w)
               (-1)
               0
-    vel = normalize $ (matr !* vec) ^. _xyz
+    vel = normalize $ (proj !* vec) ^. _xyz
     accel = f (calculateh2 pos vel) pos
     in lift ((pos, vel, accel), rgba 0 0 0 0)
 
@@ -87,24 +83,24 @@ calculateh2 :: Exp Position -> Exp Velocity -> Exp Float
 calculateh2 pos vel = quadrance $ pos `cross` vel
 
 f :: Exp Float -> Exp Position -> Exp Acceleration
-f h2 x = -1.5 * h2 / (norm x ^ (5 :: Exp Int)) *^ x
+f coef x = coef / (norm x ^ (5 :: Exp Int)) *^ x
 
 fst3 :: forall a b c. (Elt a, Elt b, Elt c) => Exp (a, b, c) -> Exp a
 fst3 t = let (x, _, _) = unlift t :: (Exp a, Exp b, Exp c)
          in x
 
-integrate :: Exp Float -> Exp Float -> Exp PhotonState -> Exp PhotonState
-integrate h h2 photon = let
+integrate :: Exp Float -> Exp Float -> Exp Float -> Exp PhotonState -> Exp PhotonState
+integrate h hHalf coef photon = let
     (pos, vel, accel) = unlift photon
-    posNext = pos + h *^ (vel + (h / 2) *^ accel)
-    accelNext = f h2 posNext
-    velNext = vel + (h / 2) *^ (accel + accelNext)
+    posNext = pos + h *^ (vel + hHalf *^ accel)
+    accelNext = f coef posNext
+    velNext = vel + hHalf *^ (accel + accelNext)
     in lift (posNext, velNext, accelNext)
 
-rayStep :: Exp DiskParams -> Exp Float -> Exp Float -> Exp RaytracerState -> Exp RaytracerState
-rayStep diskParams h h2 raytracerState = let
+rayStep :: Exp DiskParams -> Exp Float -> Exp Float -> Exp Float -> Exp RaytracerState -> Exp RaytracerState
+rayStep diskParams h hHalf coef raytracerState = let
     (photonState, currentColor) = unlift raytracerState
-    newPhotonState = integrate h h2 photonState
+    newPhotonState = integrate h hHalf coef photonState
 
     newColor = let
         pos = fst3 photonState
@@ -116,29 +112,20 @@ rayStep diskParams h h2 raytracerState = let
 
     in lift (newPhotonState, newColor)
 
-traceRay :: Exp Scene -> Exp RaytracerState -> Exp RaytracerState
-traceRay scn y = let
-    h = stepSize_ scn
-    h2 = let
+doContinue :: Exp Float -> Exp RaytracerState -> Exp Bool
+doContinue dotMax state = let
+    photon = fst state
+    (pos, vel, _ :: Exp Acceleration) = unlift photon
+    dotProd = (pos `dot` vel) / (norm pos * norm vel)
+    r2 = quadrance pos
+    in r2 >= 1 && dotProd < dotMax
+
+traceRay :: Exp Float -> Exp Float -> Exp DiskParams -> Exp RaytracerState -> Exp RaytracerState
+traceRay h dotMax diskParams y = let
+    coef = let
         (pos, vel, _ :: Exp Acceleration) = unlift $ fst y
-        in calculateh2 pos vel
-    dotMax = stopThreshold_ scn
-    rOuter = diskOuter_ scn
-    rInner = diskInner_ scn
-    diskCoef = pi / ((rOuter - rInner) ^ (2 :: Exp Int))
-    RGB r g b = unlift . HSL.toRGB $ diskColor_ scn :: RGB (Exp Float)
-    diskRGBA = rgba r g b (diskOpacity_ scn)
-    diskParams = lift (diskRGBA, rOuter, rInner, diskCoef)
-
-    doContinue :: Exp RaytracerState -> Exp Bool
-    doContinue state = let
-        photon = fst state
-        (pos, vel, _ :: Exp Acceleration) = unlift photon
-        dotProd = (pos `dot` vel) / (norm pos * norm vel)
-        r2 = quadrance pos
-        in r2 >= 1 && dotProd < dotMax
-
-    in while doContinue (rayStep diskParams h h2) y
+        in -1.5 * calculateh2 pos vel
+    in while (doContinue dotMax) (rayStep diskParams h (h / 2) coef) y
 
 convertColour :: Exp (RGBA Float) -> Exp PixelRGBA8
 convertColour (unlift . RGBA.clamp -> RGBA r g b _ :: RGBA (Exp Float)) = let
@@ -153,9 +140,19 @@ programInner :: (Exp RaytracerState -> Exp (RGBA Float)) -> Exp Scene
 programInner photonToRGBA scn cam offset = let
     res = resolution_ scn
     (w, h) = unlift res
-    rays = generate (index2 h w) (generateRay res cam offset)
+    res' = lift $ (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
+    matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
+    rays = generate (index2 h w) (generateRay res' (fov_ cam) matr (position_ cam) offset)
 
-    in map (photonToRGBA . traceRay scn) rays
+    -- Precalculate disk parameters
+    rOuter = diskOuter_ scn
+    rInner = diskInner_ scn
+    diskCoef = pi / ((rOuter - rInner) ^ (2 :: Exp Int))
+    RGB r g b = unlift . HSL.toRGB $ diskColor_ scn :: RGB (Exp Float)
+    diskRGBA = rgba r g b (diskOpacity_ scn)
+    diskParams = lift (diskRGBA, rOuter, rInner, diskCoef)
+
+    in map (photonToRGBA . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams) rays
 
 program :: StarGrid -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
 program stargrid scn' cam' = let
