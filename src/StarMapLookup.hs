@@ -35,7 +35,7 @@ starLookup division searchIndex stars intensity saturation' vel = let
     scale = 1.0 / (2 * w ^ (2 :: Exp Int))
 
     accumulatePixel (unlift -> (color, idx)) = let
-        (pos, mag, hue', sat) = unlift $ stars !! idx 
+        (pos, mag, hue', sat) = unlift $ stars !! idx
         dp = pos `dot` nvel
         newColor = 1 - dp * dp < r2 && dp > 0 ?
             ( let
@@ -49,16 +49,10 @@ starLookup division searchIndex stars intensity saturation' vel = let
             , color )
         in lift $ (newColor, idx + 1)
 
-    gridShape = index3 division division division
-    vecIndex = toIndex gridShape $ vecToIndex division nvel
-    baseIndex = vecIndex * 27
+    accumulateCell (unlift -> color :: Exp (RGB Float)) (unlift -> (startIndex, len)) = let
+        newColor = fst . iterate (fromIntegral len) accumulatePixel
+            $ lift (color, fromIntegral startIndex :: Exp Int)
+        in newColor
 
-    accumulateCell (unlift -> (color :: Exp (RGB Float), idx)) = let
-        (startIndex, len) = unlift $ searchIndex !! (baseIndex + idx)
-        newColor = fst . iterate len accumulatePixel
-            $ lift (color, startIndex :: Exp Int)
-        in lift $ (newColor, idx + 1)
-
-    RGB r g b = unlift . fst . iterate 27 accumulateCell
-        $ lift (RGB (0 :: Exp Float) 0 0, 0 :: Exp Int)
+    RGB r g b = unlift $ sfoldl accumulateCell (rgb 0 0 0) (vecToIndex division nvel) searchIndex
     in rgba r g b 0

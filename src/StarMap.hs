@@ -3,13 +3,16 @@
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module StarMap
     ( Star, StarGrid(..), Range, SearchIndex
     , readMapFromFile
-    , makeMapFromPPM
     , gridToByteString
     , assembleStarGrid
     , readGridFromFile
@@ -17,13 +20,20 @@ module StarMap
 
 import Control.Monad
 import Control.DeepSeq
-import Data.Array.Accelerate as A (DIM3, Z(..), (:.)(..), Elt, fromList, toList, Vector)
+import Data.Int
+import Data.Array.Accelerate as A (DIM3, DIM4, Z(..), (:.)(..),
+                                   Elt, Array, Vector, Shape,
+                                   arrayShape, fromList, fromFunction)
+import Data.Array.Accelerate.Array.Sugar (EltRepr)
+import Data.Array.Accelerate.IO.Data.ByteString
+import Data.Array.Accelerate.IO.Data.Vector.Generic()
 import Data.Array.Accelerate.Linear.V3()
 import qualified Data.ByteString as B
 import Data.Char
 import qualified Data.IntMap.Strict as IM
 import Data.Serialize as S
-import Data.List as LI
+import Data.List
+import qualified Data.Vector.Generic as V
 import GHC.Generics
 import Linear
 
@@ -31,21 +41,24 @@ import Util
 
 type Star = (V3 Float, Float, Float, Float)
 -- (start index, length)
-type Range = (Int, Int)
-type SearchIndex = Vector Range
+type Range = (Int32, Int32)
+type SearchIndex = Array DIM4 Range
 -- Division per dimension, search index, vector of stars
 data StarGrid = StarGrid Int SearchIndex (Vector Star)
     deriving (Generic, NFData, Serialize)
 
-instance (Serialize a, Elt a) => Serialize (Vector a) where
-    put = put . A.toList
-    get = fmap fromFiniteList get
+deriving instance Generic Z
+deriving instance Serialize Z
+deriving instance (Shape sh) => Generic (sh :. Int)
+deriving instance (Shape sh, Serialize sh) => Serialize (sh :. Int)
+
+instance (Shape sh, Elt e, Serialize sh, Serialize (ByteStrings (EltRepr e)))
+    => Serialize (Array sh e) where
+    put vec = put (arrayShape vec, toByteStrings vec)
+    get = fmap (\(sh, bs) -> fromByteStrings sh bs) get
 
 fromFiniteList :: (Elt a) => [a] -> Vector a
 fromFiniteList lst = A.fromList (Z :. length lst) lst
-
-mapVector :: (Elt a, Elt b) => (a -> b) -> Vector a -> Vector b
-mapVector f vec = fromFiniteList . map f $ A.toList vec
 
 -- Parse the star list in the binary format specified at
 -- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
@@ -77,17 +90,12 @@ convertMagnitudes (StarGrid division idx stars) = let
         dynamic = 50         -- "dynamic range": magnitude change that doubles intensity
         a = log 2 / dynamic
         in (x, a * (max_brightness - mag), y, z)
-    in StarGrid division idx (mapVector f stars)
+    in StarGrid division idx (V.map f stars)
 
 readMapFromFile :: FilePath -> IO (Either String [Star])
 readMapFromFile path = do
     ebs <- readSafe path
     return $ ebs >>= runGet readMap
-
-makeMapFromPPM :: FilePath -> IO (Either String StarGrid)
-makeMapFromPPM path = do
-    ppm <- readMapFromFile path
-    return $ ppm >>= return . assembleStarGrid 10
 
 readGridFromFile :: FilePath -> IO (Either String StarGrid)
 readGridFromFile path = do
@@ -111,9 +119,9 @@ starColor _   = (0, 0)
 raDecToCartesian :: Float -> Float -> V3 Float
 raDecToCartesian ra dec = V3 (cos dec * cos ra) (cos dec * sin ra) (sin dec)
 
-threeToLinear :: DIM3 -> DIM3 -> Int
+threeToLinear :: DIM3 -> DIM3 -> Int32
 threeToLinear (Z :. _ :. sy :. sx) (Z :. z :. y :. x)
-    = x + sx * (y + sy * z)
+    = fromIntegral $ x + sx * (y + sy * z)
 
 clamp_ :: Ord a => a -> a -> a -> a
 clamp_ a b x = max a $ min b x
@@ -130,24 +138,39 @@ makeGridShape division = Z :. division :. division :. division
 fst4 :: (a, b, c, d) -> a
 fst4 (x, _, _, _) = x
 
-neighbourCells :: DIM3 -> DIM3 -> [DIM3]
-neighbourCells (Z :. zMax :. yMax :. xMax) (Z :. z :. y :. x) = let
-    cells = [ Z :. z + i :. y + j :. x + k
-            | i <- [-1, 0, 1]
-            , j <- [-1, 0, 1]
-            , k <- [-1, 0, 1]
-            ]
+cellOffsets :: [DIM3]
+cellOffsets =
+    [ Z :. i :. j :. k
+    | i <- [-1, 0, 1]
+    , j <- [-1, 0, 1]
+    , k <- [-1, 0, 1]
+    ]
 
+clampToBoundary :: DIM3 -> DIM3 -> DIM3
+clampToBoundary (Z :. zMax :. yMax :. xMax) cell = let
     isWithinBounds (Z :. z' :. y' :. x') =
         z' >= 0 && z' < zMax &&
         y' >= 0 && y' < yMax &&
         x' >= 0 && x' < xMax
+    in if isWithinBounds cell
+       then cell
+       else Z :. 0 :. 0 :. 0
 
-    fix cell = if isWithinBounds cell
-                  then cell
-                  else Z :. 0 :. 0 :. 0
+addIndices :: DIM3 -> DIM3 -> DIM3
+addIndices (Z :. i :. j :. k) (Z :. x :. y :. z) =
+    Z :. i + x :. j + y :. k + z
 
-    in map fix cells
+neighbourCell :: DIM3 -> DIM4 -> Int32
+neighbourCell dims (cell :. subIdx) =
+    threeToLinear dims . clampToBoundary dims . addIndices cell
+    $ cellOffsets !! subIdx
+
+findRanges :: [(Int32, Int32)] -> [(Int, (Int32, Int32))]
+findRanges [] = []
+findRanges (h : t) = let
+    (idx, idx') = h
+    (s1, s2) = span ((idx' ==) . snd) t
+    in (fromIntegral idx', (idx, fromIntegral $ length s1 + 1 :: Int32)) : findRanges s2
 
 assembleStarGrid :: Int -> [Star] -> StarGrid
 assembleStarGrid division stars = let
@@ -156,26 +179,12 @@ assembleStarGrid division stars = let
 
     indexOfStar = toLinear . vecToIndex division . normalize . fst4
     sortedStars = sortOn indexOfStar stars
-    spatialIndices = map indexOfStar sortedStars
+    spatialIndices = map indexOfStar sortedStars :: [Int32]
 
-    ranges = let
-        f [] = []
-        f (h : t) = let
-            (idx, idx') = h
-            (s1, s2) = span ((idx' ==) . snd) t
-            in (idx', (idx, length s1 + 1)) : f s2
-        in IM.fromAscList . f $ zip [(0 :: Int) ..] spatialIndices
-    
-    allIndices = [ Z :. i :. j :. k
-                 | i <- [0 .. division - 1]
-                 , j <- [0 .. division - 1]
-                 , k <- [0 .. division - 1]
-                 ]
-    searchIndex = concatMap
-        (\j -> map (\k -> IM.findWithDefault (0, 0) (toLinear k) ranges)
-                   $ neighbourCells gridShape j)
-        allIndices
+    ranges = IM.fromAscList . findRanges $ zip [(0 :: Int32) ..] spatialIndices
+    generate = (\i -> IM.findWithDefault (0, 0) (fromIntegral i) ranges)
+               . neighbourCell gridShape
 
     in StarGrid division
-         (fromFiniteList searchIndex)
+         (fromFunction (Z :. division :. division :. division :. 27) generate)
          (fromFiniteList sortedStars)

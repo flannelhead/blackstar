@@ -159,6 +159,32 @@ packages:
       size: 1183
       sha256: 026c68b0b92f38960ec415a31eaa884516dd159186b39efb5573cdbfb329579f
 - completed:
+    size: 32876
+    subdir: accelerate-io-bytestring
+    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    cabal-file:
+      size: 1333
+      sha256: 8f5ef912ad9a186cbd59a188dbfc81a6b170105624d53c5f15e0c0cfc0f0ba8e
+    name: accelerate-io-bytestring
+    version: 0.1.0.0
+    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    pantry-tree:
+      size: 355
+      sha256: de60b8aaaf451dd152ef0811d269ca60ff94e59bac545424ac68e056ffa66843
+  original:
+    size: 32876
+    subdir: accelerate-io-bytestring
+    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    cabal-file:
+      size: 1333
+      sha256: 8f5ef912ad9a186cbd59a188dbfc81a6b170105624d53c5f15e0c0cfc0f0ba8e
+    name: accelerate-io-bytestring
+    version: 0.1.0.0
+    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    pantry-tree:
+      size: 355
+      sha256: de60b8aaaf451dd152ef0811d269ca60ff94e59bac545424ac68e056ffa66843
+- completed:
     size: 108186
     url: https://github.com/tmcdonell/colour-accelerate/archive/edc575cc6a810f5cce8d4b4423ef3968f30a93a3.tar.gz
     cabal-file:

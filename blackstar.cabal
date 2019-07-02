@@ -28,6 +28,8 @@ library
                      , accelerate
                      , accelerate-llvm-native
                      , accelerate-io-JuicyPixels
+                     , accelerate-io-bytestring
+                     , accelerate-io-vector
                      , colour-accelerate
                      , containers
                      , linear-accelerate
