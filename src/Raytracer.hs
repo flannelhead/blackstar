@@ -4,12 +4,10 @@
 {-# LANGUAGE ViewPatterns #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Raytracer (render, writeImg, BlackstarProgram, compile) where
+module Raytracer (blackstarProgram) where
 
-import Codec.Picture
 import Control.Lens hiding (use)
 import Data.Array.Accelerate
-import Data.Array.Accelerate.LLVM.Native as CPU
 import Data.Array.Accelerate.Data.Colour.HSL as HSL
 import Data.Array.Accelerate.Data.Colour.RGB
 import Data.Array.Accelerate.Data.Colour.RGBA as RGBA
@@ -34,10 +32,6 @@ type Acceleration = V3 Float
 type PhotonState = (Position, Velocity, Acceleration)
 type RaytracerState = (PhotonState, RGBA Float)
 type DiskParams = (RGBA Float, Float, Float, Float)
-type BlackstarProgram = Scalar Scene -> Scalar Camera -> Matrix PixelRGBA8
-
-writeImg :: Image PixelRGB8 -> P.FilePath -> P.IO ()
-writeImg img path = writePng path img
 
 blend' :: P.Num a => RGBA a -> RGBA a -> RGBA a
 blend' src dst = let
@@ -154,13 +148,13 @@ programInner photonToRGBA scn cam offset = let
 
     in map (photonToRGBA . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams) rays
 
-program :: StarGrid -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
-program stargrid scn' cam' = let
+blackstarProgram :: Acc (Scalar Int) -> Acc SearchIndex -> Acc (Vector Star)
+                    -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
+blackstarProgram division searchIndex stars scn' cam' = let
     scn = the scn'
     cam = the cam'
 
-    StarGrid division searchindex stars = stargrid
-    lookup = starLookup (constant division) (use searchindex) (use stars)
+    lookup = starLookup (the division) searchIndex stars
         (starIntensity_ scn) (starSaturation_ scn)
 
     photonToRGBA state = let
@@ -178,12 +172,3 @@ program stargrid scn' cam' = let
             (inner 0.75 0.5)
         , inner 0 0 )
     in map convertColour img
-
-compile :: StarGrid -> BlackstarProgram
-compile grid = CPU.runN $ program grid
-
-toArr :: Elt a => a -> Scalar a
-toArr x = fromList Z [x]
-
-render :: BlackstarProgram -> Scene -> Camera -> Image PixelRGB8
-render prog scn cam = convertRGB8 . ImageRGBA8 . imageOfArray $ prog (toArr scn) (toArr cam)

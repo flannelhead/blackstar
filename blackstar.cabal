@@ -16,6 +16,7 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Raytracer
+                     , RaytracerFrontend
                      , StarMap
                      , StarMapLookup
                      , ConfigFile
@@ -51,7 +52,9 @@ library
 executable blackstar
   hs-source-dirs:      app
   main-is:             Main.hs
-  ghc-options:         -Wall -rtsopts -threaded -with-rtsopts=-N -with-rtsopts=-n2M -with-rtsopts=-A64M
+  ghc-options:         -Wall -rtsopts -threaded
+                       -with-rtsopts=-N -with-rtsopts=-n2M -with-rtsopts=-A64M
+                       -fplugin=Data.Array.Accelerate.LLVM.Native.Plugin
   build-depends:       base
                      , blackstar
                      , directory
@@ -60,6 +63,7 @@ executable blackstar
                      , cmdargs
                      , filepath
                      , ansi-terminal
+                     , accelerate-llvm-native
   default-language:    Haskell2010
 
 executable animate
