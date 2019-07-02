@@ -93,7 +93,7 @@ stack build --profile
 ```
 and then run it with
 ```
-stack exec blackstar -- scenes/default.yaml -o output +RTS -p
+stack exec --profile blackstar -- scenes/default.yaml -o output +RTS -p
 ```
 The profile will be generated to `blackstar.prof`.
 
