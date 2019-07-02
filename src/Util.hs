@@ -3,7 +3,7 @@ module Util ( promptOverwriteFile, readSafe, normalizePath
 
 import System.Directory
 import System.IO
-import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as B
 import Data.Time.Clock.POSIX (getPOSIXTime)
 import System.FilePath
 import Control.DeepSeq

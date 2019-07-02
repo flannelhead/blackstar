@@ -28,7 +28,7 @@ import Data.Array.Accelerate.Array.Sugar (EltRepr)
 import Data.Array.Accelerate.IO.Data.ByteString
 import Data.Array.Accelerate.IO.Data.Vector.Generic()
 import Data.Array.Accelerate.Linear.V3()
-import qualified Data.ByteString as B
+import qualified Data.ByteString.Lazy as B
 import Data.Char
 import qualified Data.IntMap.Strict as IM
 import Data.Serialize as S
@@ -36,6 +36,7 @@ import Data.List
 import qualified Data.Vector.Generic as V
 import GHC.Generics
 import Linear
+import Codec.Compression.GZip
 
 import Util
 
@@ -95,15 +96,15 @@ convertMagnitudes (StarGrid division idx stars) = let
 readMapFromFile :: FilePath -> IO (Either String [Star])
 readMapFromFile path = do
     ebs <- readSafe path
-    return $ ebs >>= runGet readMap
+    return $ ebs >>= runGetLazy readMap
 
 readGridFromFile :: FilePath -> IO (Either String StarGrid)
 readGridFromFile path = do
     ebs <- readSafe path
-    return . fmap convertMagnitudes $ S.decode =<< ebs
+    return . fmap convertMagnitudes $ S.decodeLazy . decompress =<< ebs
 
 gridToByteString :: StarGrid -> B.ByteString
-gridToByteString = S.encode
+gridToByteString = compress . S.encodeLazy
 
 -- Some nice colour values for different spectral types
 starColor :: Char -> (Float, Float)

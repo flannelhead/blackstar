@@ -45,6 +45,7 @@ library
                      , time
                      , deepseq
                      , JuicyPixels
+                     , zlib
   default-language:    Haskell2010
 
 executable blackstar

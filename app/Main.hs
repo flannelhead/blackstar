@@ -32,7 +32,7 @@ argparser = Blackstar { preview = def
                           &= typ "PATH"
                       , force = def
                           &= help "overwrite images without asking"
-                      , starmapPath = "stars.bin"
+                      , starmapPath = "stars.bin.gz"
                           &= help "path to starmap"
                           &= typ "PATH"
                       , inputfile = def

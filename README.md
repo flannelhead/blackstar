@@ -22,7 +22,7 @@ First, install [LLVM 8.0.0](https://llvm.org/releases/download.html#8.0.0) on yo
 
 Use [`stack`](https://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
-This repository includes a star lookup map (`stars.bin`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt map in binary form is included for convenience, but you can also build it yourself. First, remove `stars.bin`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM stars.bin` and the map will be generated and saved.
+This repository includes a star lookup map (`stars.bin.gz`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt map in binary form is included for convenience, but you can also build it yourself. First, remove `stars.bin.gz`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM` and the map will be generated and saved.
 
 ## Usage
 When `blackstar` has been built with `stack`, you can run it with
@@ -42,7 +42,7 @@ Scenes are defined using YAML config files. Look in the `scenes` folder for exam
 ```
 stack exec blackstar -- scenes/default.yaml --output output
 ```
-in the root directory of the project. The `--output` flag specifies the output directory. By default, `blackstar` searches for a starmap in the path `./stars.bin`, but a different path can be specified using the `--starmap` flag.
+in the root directory of the project. The `--output` flag specifies the output directory. By default, `blackstar` searches for a starmap in the path `./stars.bin.gz`, but a different path can be specified using the `--starmap` flag.
 
 The rendered files are named `scenename.png` and `scenename-bloomed.png`. The `--preview` flag can be used to render small-sized previews of the scene while adjusting the parameters. The `--force` flag will cause `blackstar` to overwrite output images without a prompt.
 

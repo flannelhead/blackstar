@@ -18,12 +18,12 @@ argparser :: GenerateStarMap
 argparser = GenerateStarMap { infile = def
                              &= typ "INPUTFILE"
                              &= argPos 0
-                         , outfile = def
+                         , outfile = "stars.bin.gz"
                              &= typ "OUTPUTFILE"
-                             &= argPos 1
-                         , division = 20
+                             &= help "output file name"
+                         , division = 50
+                             &= typ "DIVISION"
                              &= help "division of the search space"
-                             &= opt (20 :: Int)
                          } &= summary "GenerateStarMap utility v0.1"
                            &= program "generate-starmap"
 
@@ -40,8 +40,8 @@ main = do
             putStrLn "Generating the star map..."
             starmap <- timeAction "Building the map"
                 $ assembleStarGrid (division cmdline) stars
-            let starmapBl = B.fromStrict $ gridToByteString starmap
+            let starmapBs = gridToByteString starmap
             promptOverwriteFile outfile'
-                (\filename -> B.writeFile filename starmapBl)
+                (\filename -> B.writeFile filename starmapBs)
             putStrLn $ "Map saved to " ++ outfile' ++ "."
         Left  err   ->  putStrLn err
