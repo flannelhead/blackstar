@@ -45,7 +45,7 @@ starLookup division searchIndex stars intensity saturation' vel = let
                 d2 = qd pos nvel
                 val = (* intensity) . exp $ mag - d2 * scale
                 coef = lift $ RGB val val val :: Exp (RGB Float)
-              in (+ color) . (* coef) . toRGB $ hsl hue' (saturation' * sat) 0.5
+              in (+ color) . (* coef) . toRGB . lift $ HSL hue' (saturation' * sat) 0.5
             , color )
         in lift $ (newColor, idx + 1)
 
@@ -55,4 +55,4 @@ starLookup division searchIndex stars intensity saturation' vel = let
         in newColor
 
     RGB r g b = unlift $ sfoldl accumulateCell (rgb 0 0 0) (vecToIndex division nvel) searchIndex
-    in rgba r g b 0
+    in lift $ RGBA r g b (0 :: Exp Float)

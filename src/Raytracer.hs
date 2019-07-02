@@ -48,7 +48,7 @@ diskColor' (unlift -> (diskRGBA :: Exp (RGBA Float), rOuter, rInner, coef)) radi
     RGBA r g b a = unlift diskRGBA
     c = sin $ coef * ((rOuter - radius) ^ (2 :: Exp Int))
     in radius > rInner && radius < rOuter ?
-           ( rgba (c * r) (c * g) (c * b) (c * a)
+           ( lift $ RGBA (c * r) (c * g) (c * b) (c * a)
            , rgba 0 0 0 0 )
 
 interpolateDiskRadius :: Exp Position -> Exp Position -> Exp Float
@@ -143,7 +143,7 @@ programInner photonToRGBA scn cam offset = let
     rInner = diskInner_ scn
     diskCoef = pi / ((rOuter - rInner) ^ (2 :: Exp Int))
     RGB r g b = unlift . HSL.toRGB $ diskColor_ scn :: RGB (Exp Float)
-    diskRGBA = rgba r g b (diskOpacity_ scn)
+    diskRGBA = lift $ RGBA r g b (diskOpacity_ scn) :: Exp (RGBA Float)
     diskParams = lift (diskRGBA, rOuter, rInner, diskCoef)
 
     in map (photonToRGBA . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams) rays
