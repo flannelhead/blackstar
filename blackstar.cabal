@@ -28,8 +28,8 @@ library
                      , data-default
                      , accelerate
                      , accelerate-llvm-native
+                     , accelerate-io-cereal
                      , accelerate-io-JuicyPixels
-                     , accelerate-io-bytestring
                      , accelerate-io-vector
                      , colour-accelerate
                      , containers

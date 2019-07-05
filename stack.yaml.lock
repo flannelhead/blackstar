@@ -81,109 +81,135 @@ packages:
       size: 4612
       sha256: 12bcf372961555fbfe9a607ee2523b43b08f2328b741e56bc0fc0d0ee3e50f71
 - completed:
-    size: 32876
+    size: 34613
     subdir: accelerate-io
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 1757
       sha256: d8b7971ad509db13269a1309881ecef2d93b64d9fc8273f43755123fe38012e6
     name: accelerate-io
     version: 1.3.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 432
       sha256: 4291e5d6beaaf3f7992a2842d39ccc8ad185d08e1fd64379bd5ba54fa491255a
   original:
-    size: 32876
+    size: 34613
     subdir: accelerate-io
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 1757
       sha256: d8b7971ad509db13269a1309881ecef2d93b64d9fc8273f43755123fe38012e6
     name: accelerate-io
     version: 1.3.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 432
       sha256: 4291e5d6beaaf3f7992a2842d39ccc8ad185d08e1fd64379bd5ba54fa491255a
 - completed:
-    size: 32876
+    size: 34613
     subdir: accelerate-io-JuicyPixels
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 1475
       sha256: ce7e1017a4917a839d2f03914dd724851cab950f00479d0f00728fd05b922312
     name: accelerate-io-JuicyPixels
     version: 0.1.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 446
       sha256: 0754f5d304fe89da60d407b60b966ce42907bff9912b6c371b3eea7b9869e9c3
   original:
-    size: 32876
+    size: 34613
     subdir: accelerate-io-JuicyPixels
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 1475
       sha256: ce7e1017a4917a839d2f03914dd724851cab950f00479d0f00728fd05b922312
     name: accelerate-io-JuicyPixels
     version: 0.1.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 446
       sha256: 0754f5d304fe89da60d407b60b966ce42907bff9912b6c371b3eea7b9869e9c3
 - completed:
-    size: 32876
+    size: 34613
     subdir: accelerate-io-vector
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 2328
       sha256: a9bbfb2ba8149ed17d66c023189f9e0c68a722e68498c76105343ae9d2cb0dec
     name: accelerate-io-vector
     version: 0.1.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 1183
       sha256: 026c68b0b92f38960ec415a31eaa884516dd159186b39efb5573cdbfb329579f
   original:
-    size: 32876
+    size: 34613
     subdir: accelerate-io-vector
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 2328
       sha256: a9bbfb2ba8149ed17d66c023189f9e0c68a722e68498c76105343ae9d2cb0dec
     name: accelerate-io-vector
     version: 0.1.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 1183
       sha256: 026c68b0b92f38960ec415a31eaa884516dd159186b39efb5573cdbfb329579f
 - completed:
-    size: 32876
+    size: 34613
     subdir: accelerate-io-bytestring
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 1333
       sha256: 8f5ef912ad9a186cbd59a188dbfc81a6b170105624d53c5f15e0c0cfc0f0ba8e
     name: accelerate-io-bytestring
     version: 0.1.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 355
       sha256: de60b8aaaf451dd152ef0811d269ca60ff94e59bac545424ac68e056ffa66843
   original:
-    size: 32876
+    size: 34613
     subdir: accelerate-io-bytestring
-    url: https://github.com/AccelerateHS/accelerate-io/archive/b909e3e225fff5f6eadeddc8668ef65677b19f9f.tar.gz
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
     cabal-file:
       size: 1333
       sha256: 8f5ef912ad9a186cbd59a188dbfc81a6b170105624d53c5f15e0c0cfc0f0ba8e
     name: accelerate-io-bytestring
     version: 0.1.0.0
-    sha256: 8475212e65fb9c3a8035437f22f192ac8e7e26f10575ee0172c08122a91dd44a
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
     pantry-tree:
       size: 355
       sha256: de60b8aaaf451dd152ef0811d269ca60ff94e59bac545424ac68e056ffa66843
+- completed:
+    size: 34613
+    subdir: accelerate-io-cereal
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
+    cabal-file:
+      size: 1487
+      sha256: 8b746ed6051e7bc4071a963ef12462af4c7d15076e5f5adb7525e0aa6ae3338f
+    name: accelerate-io-cereal
+    version: 0.1.0.0
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
+    pantry-tree:
+      size: 351
+      sha256: 4dc064ffb72609851015aff142e0282c8510875fdedce75f206f7c39070831d9
+  original:
+    size: 34613
+    subdir: accelerate-io-cereal
+    url: https://github.com/AccelerateHS/accelerate-io/archive/e83461b194bb046a6f129a6be7f0e865653ed365.tar.gz
+    cabal-file:
+      size: 1487
+      sha256: 8b746ed6051e7bc4071a963ef12462af4c7d15076e5f5adb7525e0aa6ae3338f
+    name: accelerate-io-cereal
+    version: 0.1.0.0
+    sha256: ee2c3fff8365b4fa9a9dd5da116ae007d7e9ada877e9481fbdfd2539a531e11a
+    pantry-tree:
+      size: 351
+      sha256: 4dc064ffb72609851015aff142e0282c8510875fdedce75f206f7c39070831d9
 - completed:
     size: 108186
     url: https://github.com/tmcdonell/colour-accelerate/archive/edc575cc6a810f5cce8d4b4423ef3968f30a93a3.tar.gz

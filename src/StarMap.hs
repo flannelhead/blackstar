@@ -21,10 +21,9 @@ import Control.Monad
 import Control.DeepSeq
 import Data.Int
 import Data.Array.Accelerate as A (DIM3, DIM4, Z(..), (:.)(..),
-                                   Elt, Array, Vector, Shape,
-                                   arrayShape, fromList, fromFunction)
-import Data.Array.Accelerate.Array.Sugar (EltRepr)
-import Data.Array.Accelerate.IO.Data.ByteString
+                                   Elt, Array, Vector,
+                                   fromList, fromFunction)
+import Data.Array.Accelerate.IO.Data.Serialize()
 import Data.Array.Accelerate.IO.Data.Vector.Generic()
 import Data.Array.Accelerate.Linear.V3()
 import qualified Data.ByteString.Lazy as B
@@ -46,16 +45,6 @@ type SearchIndex = Array DIM4 Range
 -- Division per dimension, search index, vector of stars
 data StarGrid = StarGrid Int SearchIndex (Vector Star)
     deriving (Generic, NFData, Serialize)
-
-deriving instance Generic Z
-deriving instance Serialize Z
-deriving instance (Shape sh) => Generic (sh :. Int)
-deriving instance (Shape sh, Serialize sh) => Serialize (sh :. Int)
-
-instance (Shape sh, Elt e, Serialize sh, Serialize (ByteStrings (EltRepr e)))
-    => Serialize (Array sh e) where
-    put vec = put (arrayShape vec, toByteStrings vec)
-    get = fmap (\(sh, bs) -> fromByteStrings sh bs) get
 
 fromFiniteList :: (Elt a) => [a] -> Vector a
 fromFiniteList lst = A.fromList (Z :. length lst) lst
