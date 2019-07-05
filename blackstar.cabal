@@ -6,7 +6,7 @@ homepage:            http://github.com/flannelhead/blackstar#readme
 license:             BSD3
 license-file:        LICENSE
 author:              Sakari Kapanen
-maintainer:          sakari.m.kapanen@gmail.com
+maintainer:          sk@sakarikapanen.fi
 copyright:           2019 Sakari Kapanen
 category:            Graphics
 build-type:          Simple
