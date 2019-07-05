@@ -21,7 +21,7 @@ clamp_ a b x = max a $ min b x
 
 vecToIndex :: Exp Int -> Exp (V3 Float) -> Exp DIM3
 vecToIndex division vec = let
-    vecNormalized = vec ^+^ (constant $ V3 1 1 1)
+    vecNormalized = vec ^+^ constant (V3 1 1 1)
     V3 x y z = unlift . fmap (clamp_ 0 (division - 1) . floor)
                  $ 0.5 * fromIntegral division *^ vecNormalized
     in index3 z y x
@@ -47,7 +47,7 @@ starLookup division searchIndex stars intensity saturation' vel = let
                 coef = lift $ RGB val val val :: Exp (RGB Float)
               in (+ color) . (* coef) . toRGB . lift $ HSL hue' (saturation' * sat) 0.5
             , color )
-        in lift $ (newColor, idx + 1)
+        in lift (newColor, idx + 1)
 
     accumulateCell (unlift -> color :: Exp (RGB Float)) (unlift -> (startIndex, len)) = let
         newColor = fst . iterate (fromIntegral len) accumulatePixel

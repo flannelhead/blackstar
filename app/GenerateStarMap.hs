@@ -41,7 +41,6 @@ main = do
             starmap <- timeAction "Building the map"
                 $ assembleStarGrid (division cmdline) stars
             let starmapBs = gridToByteString starmap
-            promptOverwriteFile outfile'
-                (\filename -> B.writeFile filename starmapBs)
+            promptOverwriteFile outfile' (`B.writeFile` starmapBs)
             putStrLn $ "Map saved to " ++ outfile' ++ "."
         Left  err   ->  putStrLn err

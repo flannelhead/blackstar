@@ -2,7 +2,6 @@
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE StrictData #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -187,5 +186,5 @@ assembleStarGrid division stars = let
                . neighbourCell gridShape
 
     in StarGrid division
-         (fromFunction (Z :. division :. division :. division :. 27) generate)
+         (fromFunction (makeGridShape division :. 27) generate)
          (fromFiniteList sortedStars)

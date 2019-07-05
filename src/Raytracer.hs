@@ -55,8 +55,8 @@ interpolateDiskRadius :: Exp Position -> Exp Position -> Exp Float
 interpolateDiskRadius pos newPos = let
     y = pos ^. _y
     yNew = newPos ^. _y
-    r = sqrt $ quadrance pos
-    rNew = sqrt $ quadrance newPos
+    r = norm pos
+    rNew = norm newPos
     in (yNew * r - y * rNew) / (yNew - y)
 
 -- Generate the sight rays ie. initial conditions for the integration
@@ -134,7 +134,7 @@ programInner :: (Exp RaytracerState -> Exp (RGBA Float)) -> Exp Scene
 programInner photonToRGBA scn cam offset = let
     res = resolution_ scn
     (w, h) = unlift res
-    res' = lift $ (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
+    res' = lift (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
     matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
     rays = generate (index2 h w) (generateRay res' (fov_ cam) matr (position_ cam) offset)
 

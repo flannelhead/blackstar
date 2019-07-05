@@ -5,8 +5,7 @@ module Animation ( Keyframe(camera, time)
                  , InterpolationMethod(Linear)
                  , generateFrames, validateKeyframes ) where
 
-import Data.List (sortBy)
-import Data.Ord (comparing)
+import Data.List (sortOn)
 import qualified ConfigFile as CF
 import Data.Aeson.Types
 import Linear ((*^))
@@ -47,7 +46,7 @@ generateFrames animation = let
     stepsize = (1 :: Float) / fromIntegral (nFrames animation - 1)
     -- Take the first keyframe from the scene in the config
     -- Also sort the frames by time
-    frames = sortBy (comparing time) $ keyframes animation
+    frames = sortOn time $ keyframes animation
     points = (* stepsize) . fromIntegral <$> [0 .. nFrames animation - 1]
     in map (makeFrame animation frames) points
 
