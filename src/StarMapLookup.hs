@@ -17,7 +17,7 @@ import Prelude()
 import StarMap
 
 clamp_ :: Ord a => Exp a -> Exp a -> Exp a -> Exp a
-clamp_ a b x = max a $ min b x
+clamp_ a b = max a . min b
 
 vecToIndex :: Exp Int -> Exp (V3 Float) -> Exp DIM3
 vecToIndex division vec = let

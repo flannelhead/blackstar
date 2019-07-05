@@ -1,13 +1,7 @@
-{-# LANGUAGE DeriveGeneric, DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE Strict #-}
 {-# LANGUAGE StrictData #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE TypeOperators #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
-
-{-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module StarMap
     ( Star, StarGrid(..), Range, SearchIndex
@@ -21,8 +15,7 @@ import Control.Monad
 import Control.DeepSeq
 import Data.Int
 import Data.Array.Accelerate as A (DIM3, DIM4, Z(..), (:.)(..),
-                                   Elt, Array, Vector,
-                                   fromList, fromFunction)
+                                   Array, Vector, fromFunction)
 import Data.Array.Accelerate.IO.Data.Serialize()
 import Data.Array.Accelerate.IO.Data.Vector.Generic()
 import Data.Array.Accelerate.Linear.V3()
@@ -45,9 +38,6 @@ type SearchIndex = Array DIM4 Range
 -- Division per dimension, search index, vector of stars
 data StarGrid = StarGrid Int SearchIndex (Vector Star)
     deriving (Generic, NFData, Serialize)
-
-fromFiniteList :: (Elt a) => [a] -> Vector a
-fromFiniteList lst = A.fromList (Z :. length lst) lst
 
 -- Parse the star list in the binary format specified at
 -- http://tdc-www.harvard.edu/software/catalogs/ppm.entry.html
@@ -113,19 +103,17 @@ threeToLinear (Z :. _ :. sy :. sx) (Z :. z :. y :. x)
     = fromIntegral $ x + sx * (y + sy * z)
 
 clamp_ :: Ord a => a -> a -> a -> a
-clamp_ a b x = max a $ min b x
+clamp_ a b = max a . min b
 
 vecToIndex :: Int -> V3 Float -> DIM3
 vecToIndex division vec = let
-    vecNormalized = vec ^+^ V3 1 1 1
-    V3 x y z = fmap (clamp_ 0 (division - 1) . floor) $ 0.5 * fromIntegral division *^ vecNormalized
+    vecNormalized = normalize vec ^+^ V3 1 1 1
+    V3 x y z = fmap (clamp_ 0 (division - 1) . floor)
+                 $ 0.5 * fromIntegral division *^ vecNormalized
     in Z :. z :. y :. x
 
 makeGridShape :: Int -> DIM3
 makeGridShape division = Z :. division :. division :. division
-
-fst4 :: (a, b, c, d) -> a
-fst4 (x, _, _, _) = x
 
 cellOffsets :: [DIM3]
 cellOffsets =
@@ -165,15 +153,14 @@ assembleStarGrid :: Int -> [Star] -> StarGrid
 assembleStarGrid division stars = let
     gridShape = makeGridShape division
     toLinear = threeToLinear gridShape
-
-    indexOfStar = toLinear . vecToIndex division . normalize . fst4
+    indexOfStar = toLinear . vecToIndex division . (\(x, _, _, _) -> x)
     sortedStars = sortOn indexOfStar stars
-    spatialIndices = map indexOfStar sortedStars :: [Int32]
+    spatialIndices = map indexOfStar sortedStars
 
-    ranges = IM.fromAscList . findRanges $ zip [(0 :: Int32) ..] spatialIndices
+    ranges = IM.fromAscList . findRanges $ zip [0..] spatialIndices
     generate = (\i -> IM.findWithDefault (0, 0) (fromIntegral i) ranges)
                . neighbourCell gridShape
 
     in StarGrid division
-         (fromFunction (makeGridShape division :. 27) generate)
-         (fromFiniteList sortedStars)
+         (fromFunction (gridShape :. 27) generate)
+         (V.fromList sortedStars)
