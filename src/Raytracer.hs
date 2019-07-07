@@ -20,7 +20,7 @@ import Data.Array.Accelerate.Linear.V2
 import Data.Array.Accelerate.Linear.V3
 import Data.Array.Accelerate.Linear.V4
 import Data.Array.Accelerate.IO.Codec.Picture
-import qualified Prelude as P
+import Prelude()
 
 import StarMap
 import StarMapLookup
@@ -33,15 +33,11 @@ type PhotonState = (Position, Velocity, Acceleration)
 type RaytracerState = (PhotonState, RGBA Float)
 type DiskParams = (RGBA Float, Float, Float, Float)
 
-blend' :: P.Num a => RGBA a -> RGBA a -> RGBA a
-blend' src dst = let
-    RGBA sr sg sb sa = src
-    RGBA dr dg db da = dst
-    g s d = s + d * (1 - sa)
-    in RGBA (g sr dr) (g sg dg) (g sb db) (g sa da)
-
 blend :: Exp (RGBA Float) -> Exp (RGBA Float) -> Exp (RGBA Float)
-blend = lift2 (blend' :: RGBA (Exp Float) -> RGBA (Exp Float) -> RGBA (Exp Float))
+blend (unlift -> RGBA sr sg sb sa :: RGBA (Exp Float))
+      (unlift -> RGBA dr dg db da :: RGBA (Exp Float)) = let
+    g s d = s + d * (1 - sa)
+    in lift $ RGBA (g sr dr) (g sg dg) (g sb db) (g sa da)
 
 diskColor' :: Exp DiskParams -> Exp Float -> Exp (RGBA Float)
 diskColor' (unlift -> (diskRGBA :: Exp (RGBA Float), rOuter, rInner, coef)) radius = let
