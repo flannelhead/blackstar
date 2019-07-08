@@ -125,25 +125,6 @@ convertColour (unlift . RGBA.clamp -> RGBA r g b _ :: RGBA (Exp Float)) = let
                    (round (255 * b'))
                    255
 
-programInner :: (Exp RaytracerState -> Exp (RGBA Float)) -> Exp Scene
-                -> Exp Camera -> Exp (V2 Float) -> Acc (Matrix (RGBA Float))
-programInner photonToRGBA scn cam offset = let
-    res = resolution_ scn
-    (w, h) = unlift res
-    res' = lift (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
-    matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
-    rays = generate (index2 h w) (generateRay res' (fov_ cam) matr (position_ cam) offset)
-
-    -- Precalculate disk parameters
-    rOuter = diskOuter_ scn
-    rInner = diskInner_ scn
-    diskCoef = pi / ((rOuter - rInner) ^ (2 :: Exp Int))
-    RGB r g b = unlift . HSL.toRGB $ diskColor_ scn :: RGB (Exp Float)
-    diskRGBA = lift $ RGBA r g b (diskOpacity_ scn) :: Exp (RGBA Float)
-    diskParams = lift (diskRGBA, rOuter, rInner, diskCoef)
-
-    in map (photonToRGBA . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams) rays
-
 blackstarProgram :: Acc (Scalar Int) -> Acc SearchIndex -> Acc (Vector Star)
                     -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
 blackstarProgram division searchIndex stars scn' cam' = let
@@ -158,13 +139,29 @@ blackstarProgram division searchIndex stars scn' cam' = let
         bgColor = quadrance pos >= 1 ? (lookup vel, rgba 0 0 0 0)
         in Raytracer.blend (snd state) bgColor
 
-    inner xOff yOff = programInner photonToRGBA scn cam $ V2' xOff yOff
-    sumOf4 a b c d = 0.25 * (a + b + c + d)
+    res = resolution_ scn
+    (w, h) = unlift res
+    res' = lift (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
+    matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
+    genRay x y = generateRay res' (fov_ cam) matr (position_ cam) $ V2' x y
+    inner = compute . map (photonToRGBA . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams)
+    render :: Exp Float -> Exp Float -> Acc (Matrix (RGBA Float))
+    render xOffset yOffset = inner . compute $ generate (index2 h w) (genRay xOffset yOffset)
+
+    -- Precalculate disk parameters
+    rOuter = diskOuter_ scn
+    rInner = diskInner_ scn
+    diskCoef = pi / ((rOuter - rInner) ^ (2 :: Exp Int))
+    RGB r g b = unlift . HSL.toRGB $ diskColor_ scn :: RGB (Exp Float)
+    diskRGBA = lift $ RGBA r g b (diskOpacity_ scn) :: Exp (RGBA Float)
+    diskParams = lift (diskRGBA, rOuter, rInner, diskCoef) :: Exp DiskParams
+
+    average4 x1 x2 x3 x4 = 0.25 * (x1 + x2 + x3 + x4)
     img = supersampling_ scn ?|
-        ( zipWith4 sumOf4
-            (inner (-0.5) 0.75)
-            (inner (-0.25) (-0.5))
-            (inner 0.5 (-0.25))
-            (inner 0.75 0.5)
-        , inner 0 0 )
+        ( zipWith4 average4
+            (render (1/8) (3/8))
+            (render (-1/8) (-3/8))
+            (render (-3/8) (1/8))
+            (render (3/8) (-1/8))
+        , render 0 0 )
     in map convertColour img
