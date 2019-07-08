@@ -24,6 +24,7 @@ library
                      , Animation
   ghc-options:         -Wall
                        -O2
+                       -feager-blackholing
   build-depends:       base >= 4.7 && < 5
                      , data-default
                      , accelerate
@@ -53,8 +54,8 @@ executable blackstar
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -rtsopts -threaded
+                       -O2 -feager-blackholing
                        -with-rtsopts=-N -with-rtsopts=-n2M -with-rtsopts=-A64M
-                       -fplugin=Data.Array.Accelerate.LLVM.Native.Plugin
   build-depends:       base
                      , blackstar
                      , directory
@@ -63,7 +64,6 @@ executable blackstar
                      , cmdargs
                      , filepath
                      , ansi-terminal
-                     , accelerate-llvm-native
   default-language:    Haskell2010
 
 executable animate
@@ -82,7 +82,7 @@ executable animate
 executable generate-starmap
   hs-source-dirs:      app
   main-is:             GenerateStarMap.hs
-  ghc-options:         -Wall
+  ghc-options:         -Wall -O2
   build-depends:       base
                      , blackstar
                      , directory
