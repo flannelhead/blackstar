@@ -65,10 +65,10 @@ convertMagnitudes (StarGrid division idx stars) = let
         -- brighter the star, the smaller the magnitude. These constants
         -- are used for adjusting the light dynamics of the rendered
         -- celestial sphere.
-        max_brightness = 950 -- the "maximum brightness" magnitude
-        dynamic = 50         -- "dynamic range": magnitude change that doubles intensity
+        maxBrightness = 950 -- the "maximum brightness" magnitude
+        dynamic = 50        -- "dynamic range": magnitude change that doubles intensity
         a = log 2 / dynamic
-        in (x, a * (max_brightness - mag), y, z)
+        in (x, a * (maxBrightness - max (maxBrightness - 4 * dynamic) mag), y, z)
     in StarGrid division idx (V.map f stars)
 
 readMapFromFile :: FilePath -> IO (Either String [Star])
