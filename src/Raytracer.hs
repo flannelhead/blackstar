@@ -9,7 +9,7 @@ module Raytracer (blackstarProgram) where
 import Control.Lens hiding (use)
 import Data.Array.Accelerate
 import Data.Array.Accelerate.Data.Colour.HSL as HSL
-import Data.Array.Accelerate.Data.Colour.RGB
+import Data.Array.Accelerate.Data.Colour.RGB as RGB
 import Data.Array.Accelerate.Data.Colour.RGBA as RGBA
 import Data.Array.Accelerate.Data.Colour.SRGB as SRGB
 import Data.Array.Accelerate.Linear.Vector
@@ -25,6 +25,7 @@ import Prelude()
 import StarMap
 import StarMapLookup
 import ConfigFile
+import ImageUtil
 
 type Position = V3 Float
 type Velocity = V3 Float
@@ -117,13 +118,16 @@ traceRay h dotMax diskParams y = let
         in -1.5 * calculateh2 pos vel
     in while (doContinue dotMax) (rayStep diskParams h (h / 2) coef) y
 
-convertColour :: Exp (RGBA Float) -> Exp PixelRGBA8
-convertColour (unlift . RGBA.clamp -> RGBA r g b _ :: RGBA (Exp Float)) = let
-    RGB r' g' b' = unlift . SRGB.toRGB . lift $ RGB r g b :: RGB (Exp Float)
+convertColour :: Exp (RGB Float) -> Exp PixelRGBA8
+convertColour pix = let
+    RGB r' g' b' = unlift . SRGB.toRGB $ RGB.clamp pix :: RGB (Exp Float)
     in PixelRGBA8_ (round (255 * r'))
                    (round (255 * g'))
                    (round (255 * b'))
                    255
+
+dropAlpha :: Exp (RGBA Float) -> Exp (RGB Float)
+dropAlpha (unlift -> RGBA r g b _ :: RGBA (Exp Float)) = lift $ RGB r g b
 
 blackstarProgram :: Acc (Scalar Int) -> Acc SearchIndex -> Acc (Vector Star)
                     -> Acc (Scalar Scene) -> Acc (Scalar Camera) -> Acc (Matrix PixelRGBA8)
@@ -134,18 +138,17 @@ blackstarProgram division searchIndex stars scn' cam' = let
     lookup = starLookup (the division) searchIndex stars
         (starIntensity_ scn) (starSaturation_ scn)
 
-    photonToRGBA state = let
+    photonToRGB state = let
         (pos :: Exp (V3 Float), vel :: Exp (V3 Float), _ :: Exp (V3 Float)) = unlift $ fst state
         bgColor = quadrance pos >= 1 ? (lookup vel, rgba 0 0 0 0)
-        in Raytracer.blend (snd state) bgColor
+        in dropAlpha $ Raytracer.blend (snd state) bgColor
 
     res = resolution_ scn
     (w, h) = unlift res
     res' = lift (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
     matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
     genRay x y = generateRay res' (fov_ cam) matr (position_ cam) $ V2' x y
-    inner = compute . map (photonToRGBA . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams)
-    render :: Exp Float -> Exp Float -> Acc (Matrix (RGBA Float))
+    inner = compute . map (photonToRGB . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams)
     render xOffset yOffset = inner . compute $ generate (index2 h w) (genRay xOffset yOffset)
 
     -- Precalculate disk parameters
@@ -158,10 +161,13 @@ blackstarProgram division searchIndex stars scn' cam' = let
 
     average4 x1 x2 x3 x4 = 0.25 * (x1 + x2 + x3 + x4)
     img = supersampling_ scn ?|
-        ( zipWith4 average4
+        ( compute $ zipWith4 average4
             (render (1/8) (3/8))
             (render (-1/8) (-3/8))
             (render (-3/8) (1/8))
             (render (3/8) (-1/8))
         , render 0 0 )
+
+    imgBloomed = bloomStrength_ scn > 0 ?|
+        ( bloom (bloomStrength_ scn) (fromIntegral $ bloomDivider_ scn) img, img )
     in map convertColour img

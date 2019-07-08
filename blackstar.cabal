@@ -22,6 +22,7 @@ library
                      , ConfigFile
                      , Util
                      , Animation
+                     , ImageUtil
   ghc-options:         -Wall
                        -O2
                        -feager-blackholing
