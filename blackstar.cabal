@@ -24,8 +24,6 @@ library
                      , Animation
                      , ImageUtil
   ghc-options:         -Wall
-                       -O2
-                       -feager-blackholing
   build-depends:       base >= 4.7 && < 5
                      , data-default
                      , accelerate
@@ -55,7 +53,6 @@ executable blackstar
   hs-source-dirs:      app
   main-is:             Main.hs
   ghc-options:         -Wall -rtsopts -threaded
-                       -O2 -feager-blackholing
                        -with-rtsopts=-N -with-rtsopts=-n2M -with-rtsopts=-A64M
   build-depends:       base
                      , blackstar
