@@ -61,8 +61,8 @@ generateRay :: Exp (Float, Float) -> Exp Float -> Exp (M44 Float) -> Exp (V3 Flo
                -> Exp (V2 Float) -> Exp DIM2 -> Exp RaytracerState
 generateRay (unlift -> (w, h) :: (Exp Float, Exp Float)) fov' proj pos offset idx = let
     Z :. y :. x = unlift idx
-    V2' xOff yOff = unlift offset
-    vec = V4' (fov' * ((fromIntegral x + xOff) / w - 0.5))
+    V2_ xOff yOff = unlift offset
+    vec = V4_ (fov' * ((fromIntegral x + xOff) / w - 0.5))
               (fov' * (0.5 - (fromIntegral y + yOff) / h) * h / w)
               (-1)
               0
@@ -147,7 +147,7 @@ blackstarProgram division searchIndex stars scn' cam' = let
     (w, h) = unlift res
     res' = lift (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
     matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
-    genRay x y = generateRay res' (fov_ cam) matr (position_ cam) $ V2' x y
+    genRay x y = generateRay res' (fov_ cam) matr (position_ cam) $ V2_ x y
     inner = compute . map (photonToRGB . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams)
     render xOffset yOffset = inner . compute $ generate (index2 h w) (genRay xOffset yOffset)
 
