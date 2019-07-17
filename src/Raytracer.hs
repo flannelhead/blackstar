@@ -62,8 +62,8 @@ generateRay :: Exp (Float, Float) -> Exp Float -> Exp (M44 Float) -> Exp (V3 Flo
 generateRay (unlift -> (w, h) :: (Exp Float, Exp Float)) fov' proj pos offset idx = let
     Z :. y :. x = unlift idx
     V2_ xOff yOff = unlift offset
-    vec = V4_ (fov' * ((fromIntegral x + xOff) / w - 0.5))
-              (fov' * (0.5 - (fromIntegral y + yOff) / h) * h / w)
+    vec = V4_ (fov' * ((fromIntegral x + xOff + 0.5) / w - 0.5))
+              (fov' * (0.5 - (fromIntegral y + yOff + 0.5) / h) * h / w)
               (-1)
               0
     vel = normalize $ (proj !* vec) ^. _xyz
@@ -147,9 +147,11 @@ blackstarProgram division searchIndex stars scn' cam' = let
     (w, h) = unlift res
     res' = lift (fromIntegral w, fromIntegral h) :: Exp (Float, Float)
     matr = M.transpose $ LP.lookAt (position_ cam) (lookAt_ cam) (upVec_ cam)
-    genRay x y = generateRay res' (fov_ cam) matr (position_ cam) $ V2_ x y
-    inner = compute . map (photonToRGB . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams)
-    render xOffset yOffset = inner . compute $ generate (index2 h w) (genRay xOffset yOffset)
+    genRay = generateRay res' (fov_ cam) matr (position_ cam)
+    inner :: Shape sh => Acc (Array sh RaytracerState) -> Acc (Array sh (RGB Float))
+    inner = compute
+        . map (photonToRGB . traceRay (stepSize_ scn) (stopThreshold_ scn) diskParams)
+        . compute
 
     -- Precalculate disk parameters
     rOuter = diskOuter_ scn
@@ -159,14 +161,19 @@ blackstarProgram division searchIndex stars scn' cam' = let
     diskRGBA = lift $ RGBA r g b (diskOpacity_ scn) :: Exp (RGBA Float)
     diskParams = lift (diskRGBA, rOuter, rInner, diskCoef) :: Exp DiskParams
 
-    average4 x1 x2 x3 x4 = 0.25 * (x1 + x2 + x3 + x4)
-    img = supersampling_ scn ?|
-        ( compute $ zipWith4 average4
-            (render (1/8) (3/8))
-            (render (-1/8) (-3/8))
-            (render (-3/8) (1/8))
-            (render (3/8) (-1/8))
-        , render 0 0 )
+    img = let
+        aaOffsets :: Acc (Vector (V2 Float))
+        aaOffsets = use . fromList (Z :. 4) $
+            [ V2 ( 1/8) ( 3/8)
+            , V2 (-1/8) (-3/8)
+            , V2 (-3/8) ( 1/8)
+            , V2 ( 3/8) (-1/8)
+            ]
+        imgNoAA = inner $ generate (index2 h w) (genRay (V2_ 0 0))
+        imgWithAA = map (* 0.25) . sum . inner
+            $ generate (index3 h w 4)
+              (\(unlift -> idx :. i) -> genRay (aaOffsets !! i) idx)
+        in supersampling_ scn ?| (imgWithAA, imgNoAA)
 
     imgBloomed = bloomStrength_ scn > 0 ?|
         ( bloom (bloomStrength_ scn) (fromIntegral $ bloomDivider_ scn) img, img )
