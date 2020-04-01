@@ -22,7 +22,7 @@ First, install [LLVM 8.0.0](https://llvm.org/releases/download.html#8.0.0) on yo
 
 Use [`stack`](https://docs.haskellstack.org/en/stable/README/) to build this. First clone the repo, then run `stack build` and follow the instructions given by `stack`. You should be able to build `blackstar` on any platform where you can install `stack`.
 
-This repository includes a star lookup map (`stars.bin.gz`), which has been generated from the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html). The prebuilt map in binary form is included for convenience, but you can also build it yourself. First, remove `stars.bin.gz`. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM` and the map will be generated and saved.
+You must download the [PPM star catalog](http://tdc-www.harvard.edu/software/catalogs/ppm.html) to generate the star map. Download [this archive](http://tdc-www.harvard.edu/software/catalogs/ppm.tar.gz) and extract the file `PPM` to the root folder of this project. Then run `stack exec generate-starmap PPM` and the map will be generated and saved.
 
 ## Usage
 When `blackstar` has been built with `stack`, you can run it with
@@ -106,3 +106,10 @@ As always, there's a plenty of room for improvement. For example:
 * Preview / scene planner GUI ([fltkhs](https://hackage.haskell.org/package/fltkhs))
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
+
+## License
+
+The PPM star catalog is provided here for the sake of completeness in the file `star-catalogs/ppm.tar.gz`.
+For details on the PPM star catalog and the terms of its usage, please refer to the original page where it is published:
+http://tdc-www.harvard.edu/software/catalogs/index.html
+http://tdc-www.harvard.edu/software/catalogs/ppm.html
