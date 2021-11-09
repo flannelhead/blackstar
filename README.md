@@ -119,9 +119,3 @@ As always, there's a plenty of room for improvement. For example:
 
 Pull requests are welcome! If you find some cool scenes, I'd appreciate if you contributed them to this repository.
 
-## License
-
-The PPM star catalog is provided here for the sake of completeness in the file `star-catalogs/ppm.tar.gz`.
-For details on the PPM star catalog and the terms of its usage, please refer to the original page where it is published:
-http://tdc-www.harvard.edu/software/catalogs/index.html
-http://tdc-www.harvard.edu/software/catalogs/ppm.html
