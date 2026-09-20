@@ -7,15 +7,22 @@ import Linear hiding (lookAt, mult, trace)
 import qualified Linear as L
 import Control.Applicative
 import Control.Lens
-import Data.Default
 import Data.Massiv.Array as A
-import Data.Massiv.Array.IO
-import Graphics.ColorSpace
+import Data.Massiv.Array.IO (Image, writeImage)
+import Graphics.Pixel hiding (addAlpha, dropAlpha)
 import Prelude as P
 
 import StarMap
 import ConfigFile
 import ImageFilters
+
+type RGBA = Alpha RGB
+
+addAlpha :: Double -> Pixel RGB Double -> Pixel RGBA Double
+addAlpha a (PixelRGB r g b) = PixelRGBA r g b a
+
+dropAlpha :: Pixel RGBA Double -> Pixel RGB Double
+dropAlpha (PixelRGBA r g b _) = PixelRGB r g b
 
 data Layer = Layer (Pixel RGBA Double) | Bottom (Pixel RGBA Double) | None
 data PhotonState = PhotonState (V3 Double) (V3 Double)
@@ -28,8 +35,8 @@ sRGB x = let
 
 writeImg :: Image U RGB Double -> FilePath -> IO ()
 writeImg img path =
-    writeArray PNG def path
-      . A.map (toWord8 . fmap sRGB) $ img
+    writeImage path
+      . A.map (toPixel8 . fmap sRGB) $ img
 
 blend :: Pixel RGBA Double -> Pixel RGBA Double -> Pixel RGBA Double
 blend src@(PixelRGBA _ _ _ ta) = let
@@ -62,8 +69,8 @@ render cfg startree = let
                , diskOuter = diskOuter scn ^ (2 :: Int)
                , resolution = res }
     cfg' = cfg { scene = scn' }
-    diskRGB = toPixelRGB $ diskColor scn
-    img = makeArrayR U Par (h' :. w') $ traceRay cfg' diskRGB startree :: Image U RGB Double
+    diskRGB = liftPixel hsi2rgb $ diskColor scn
+    img = makeArrayR U Par (Sz (h' :. w')) $ traceRay cfg' diskRGB startree :: Image U RGB Double
     in if supersampling scn then supersample img else img
 
 traceRay :: Config -> Pixel RGB Double -> StarTree -> Ix2

@@ -24,7 +24,7 @@ library
   ghc-options:         -Wall
                        -O2
   build-depends:       base >= 4.7 && < 5
-                     , data-default
+                     , Color >= 0.4
                      , linear
                      , lens
                      , bytestring
@@ -34,8 +34,8 @@ library
                      , yaml
                      , aeson
                      , directory
-                     , massiv
-                     , massiv-io
+                     , massiv >= 1.0
+                     , massiv-io >= 1.0
                      , filepath
                      , time
                      , deepseq
